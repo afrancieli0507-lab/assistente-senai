@@ -100,6 +100,7 @@
   }
   .status-badge.ouvindo { background: rgba(239, 68, 68, 0.2); color: #fca5a5; }
   .status-badge.falando { background: rgba(16, 185, 129, 0.2); color: #6ee7b7; }
+  .status-badge.alerta2a { background: rgba(245, 158, 11, 0.25); color: #fcd34d; }
 
   .fala-assistente {
     font-size: 20px;
@@ -230,41 +231,52 @@
   </div>
 </main>
 
-<div id="logRodape" class="log-rodape">Base desconectada. Configure a URL do Apps Script.</div>
+<div id="logRodape" class="log-rodape">Base desconectada. Configure seu e-mail e a URL do Apps Script.</div>
 
 <div id="modalConfig" class="modal">
   <div class="modal-box">
-    <h2>Conectar à Planilha SENAI</h2>
+    <h2>Acesso Validado — SENAI</h2>
     <div class="campo">
-      <label>Nome do Aluno / Operador *</label>
-      <input id="cfgAluno" placeholder="Ex: João Silva / Maria">
+      <label>Seu E-mail Cadastrado no Sistema *</label>
+      <input id="cfgEmail" type="email" placeholder="Ex: amanda@sp.senai.br">
     </div>
     <div class="campo">
       <label>URL do App da Web (/exec) *</label>
       <input id="cfgUrl" placeholder="https://script.google.com/macros/s/.../exec">
     </div>
-    <button id="btnSalvarCfg" class="btn btn-iniciar" style="width:100%" onclick="salvarConfig()">Salvar e Carregar Acervo</button>
+    <button id="btnSalvarCfg" class="btn btn-iniciar" style="width:100%" onclick="salvarConfig()">Validar E-mail e Carregar</button>
   </div>
 </div>
 
 <script>
+const URL_APPS_SCRIPT_PADRAO = ""; // Opcional: cole sua URL /exec aqui entre aspas para já vir preenchida
 let acervoCache = [];
+let pendentes2aCache = {};
+let operadorNome = "";
 let ativo = false;
 let etapa = "idle";
 let reconhecimento = null;
 let itemAtual = null;
 let enderecoFalado = "";
+let houveDivergenciaEnd = false;
 let ultimaFalaTexto = "";
 
 window.addEventListener("DOMContentLoaded", () => {
-  const urlSalva = localStorage.getItem("senai_url_exec") || "";
-  const alunoSalvo = localStorage.getItem("senai_aluno") || "";
-  document.getElementById("cfgUrl").value = urlSalva;
-  document.getElementById("cfgAluno").value = alunoSalvo;
+  // Permite receber ?email=...&url=... direto do botão "By Voice" do sistema principal!
+  const params = new URLSearchParams(window.location.search);
+  const emailParam = params.get("email");
+  const urlParam = params.get("url");
 
-  if (urlSalva && alunoSalvo) {
-    document.getElementById("modalConfig").classList.add("oculto");
-    carregarAcervoRemoto();
+  if (emailParam) localStorage.setItem("senai_email", emailParam.trim());
+  if (urlParam && urlParam.includes("/exec")) localStorage.setItem("senai_url_exec", urlParam.trim());
+
+  const urlSalva = localStorage.getItem("senai_url_exec") || URL_APPS_SCRIPT_PADRAO;
+  const emailSalvo = localStorage.getItem("senai_email") || "";
+  document.getElementById("cfgUrl").value = urlSalva;
+  document.getElementById("cfgEmail").value = emailSalvo;
+
+  if (urlSalva && emailSalvo) {
+    carregarAcervoRemoto(true);
   }
 });
 
@@ -275,53 +287,52 @@ function abrirConfig() {
 
 async function salvarConfig() {
   const url = document.getElementById("cfgUrl").value.trim();
-  const aluno = document.getElementById("cfgAluno").value.trim();
-  if (!url.includes("/exec") || !aluno) {
-    alert("Preencha seu nome e a URL completa terminada em /exec.");
+  const email = document.getElementById("cfgEmail").value.trim().toLowerCase();
+  if (!url.includes("/exec") || !email.includes("@")) {
+    alert("Informe seu e-mail válido cadastrado e a URL completa terminada em /exec.");
     return;
   }
   localStorage.setItem("senai_url_exec", url);
-  localStorage.setItem("senai_aluno", aluno);
+  localStorage.setItem("senai_email", email);
 
   const btn = document.getElementById("btnSalvarCfg");
-  btn.textContent = "Conectando...";
+  btn.textContent = "Validando e-mail...";
   btn.disabled = true;
 
-  await carregarAcervoRemoto();
+  await carregarAcervoRemoto(true);
 
-  btn.textContent = "Salvar e Carregar Acervo";
+  btn.textContent = "Validar E-mail e Carregar";
   btn.disabled = false;
-  document.getElementById("modalConfig").classList.add("oculto");
 }
 
-async function carregarAcervoRemoto() {
+async function carregarAcervoRemoto(fecharModalSeOk) {
   const url = localStorage.getItem("senai_url_exec");
+  const email = localStorage.getItem("senai_email");
   const rodape = document.getElementById("logRodape");
-  rodape.textContent = "Sincronizando acervo com a planilha...";
+  rodape.textContent = "Validando acesso e sincronizando acervo...";
 
   try {
     const resp = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify({ acao: "consultar_acervo" })
+      body: JSON.stringify({ acao: "consultar_acervo", email: email })
     });
-    const textoBruto = await resp.text();
-    let json;
-    try {
-      json = JSON.parse(textoBruto);
-    } catch (parseErr) {
-      rodape.textContent = "Erro: o Apps Script retornou HTML em vez de JSON. Verifique se 'Quem pode acessar' está como 'Qualquer pessoa'.";
-      return;
-    }
+    const json = await resp.json();
 
     if (json.ok && Array.isArray(json.acervo)) {
       acervoCache = json.acervo;
-      rodape.textContent = `✅ Conectado · ${acervoCache.length} livros carregados · Operador: ${localStorage.getItem("senai_aluno")}`;
+      pendentes2aCache = json.pendentes2a || {};
+      operadorNome = json.operador || email;
+      const qtdPend = Object.keys(pendentes2aCache).length;
+      rodape.textContent = `✅ ${operadorNome} (${email}) · ${acervoCache.length} livros · ${qtdPend} pendentes 2ª conf.`;
+      if (fecharModalSeOk) document.getElementById("modalConfig").classList.add("oculto");
     } else {
-      rodape.textContent = "❌ Erro ao ler acervo: " + (json.erro || "verifique a implantação.");
+      rodape.textContent = "❌ " + (json.erro || "Acesso negado.");
+      document.getElementById("modalConfig").classList.remove("oculto");
+      alert(json.erro || "E-mail não autorizado na planilha.");
     }
   } catch (e) {
-    rodape.textContent = "❌ Falha de rede/CORS: " + e.message;
+    rodape.textContent = "❌ Falha de conexão: " + e.message;
   }
 }
 
@@ -337,8 +348,8 @@ function setEstadoUI(modo, badge, fala) {
   }
 }
 
-function falar(texto, callbackFim) {
-  setEstadoUI("falando", "ASSISTENTE FALANDO", texto);
+function falar(texto, callbackFim, classeBadge) {
+  setEstadoUI(classeBadge || "falando", classeBadge === "alerta2a" ? "SEGUNDA CONFERÊNCIA" : "ASSISTENTE FALANDO", texto);
   if (!("speechSynthesis" in window)) {
     if (callbackFim) callbackFim();
     return;
@@ -390,11 +401,14 @@ function alternarAssistente() {
 }
 
 function iniciarAssistente() {
+  if (!operadorNome) {
+    abrirConfig();
+    return;
+  }
   ativo = true;
   document.getElementById("btnIniciar").style.display = "none";
   document.getElementById("btnParar").style.display = "block";
-  const aluno = localStorage.getItem("senai_aluno") || "Aluno";
-  pedirSAPEPosicao(`Olá ${aluno}! Qual o código SAP, a coluna e o nível?`);
+  pedirSAPEPosicao(`Olá ${operadorNome}! Qual o código SAP, a coluna e o nível?`);
 }
 
 function pararAssistente() {
@@ -457,6 +471,10 @@ function limparCodigoSAP(valor) {
   return String(valor || "").replace(/[^0-9a-zA-Z]/g, "").replace(/^0+/, "");
 }
 
+function normComp(v) {
+  return String(v || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "");
+}
+
 function tratarSAPEPosicao(falado) {
   const norm = normalizarDigitos(falado);
 
@@ -466,7 +484,7 @@ function tratarSAPEPosicao(falado) {
 
   const mCol = norm.match(/coluna\s*(\d+)/i);
   const mNiv = norm.match(/n[ií]vel\s*(\d+)/i);
-  enderecoFalado = (mCol || mNiv) ? `Coluna ${mCol ? mCol[1] : "?"} Nível ${mNiv ? mNiv[1] : "?"}` : falado;
+  enderecoFalado = (mCol || mNiv) ? `C${mCol ? mCol[1] : "?"}N${mNiv ? mNiv[1] : "?"}` : falado;
 
   if (!sap) {
     pedirSAPEPosicao("Não captei o código SAP. Diga novamente o SAP, coluna e nível.");
@@ -480,10 +498,38 @@ function tratarSAPEPosicao(falado) {
     document.getElementById("cardSAP").textContent = sap;
     document.getElementById("cardLivro").textContent = "Não encontrado (" + acervoCache.length + " na base)";
     document.getElementById("cardEndereco").textContent = enderecoFalado;
-    pedirSAPEPosicao(`O código SAP ${sap} não está no cadastro. Diga outro código ou verifique a etiqueta.`);
+    pedirSAPEPosicao(`O código SAP ${sap} não está no cadastro. Diga outro código.`);
     return;
   }
 
+  // VERIFICA SE ESTE LIVRO JÁ ESTÁ AGUARDANDO 2ª CONFERÊNCIA
+  const pend2a = pendentes2aCache[sapLimpo];
+  if (pend2a) {
+    const emailAtual = (localStorage.getItem("senai_email") || "").split("@")[0];
+    if (
+      normComp(pend2a.primeiroOperador) === normComp(operadorNome) ||
+      normComp(pend2a.primeiroOperador).includes(normComp(emailAtual))
+    ) {
+      document.getElementById("cardSAP").textContent = livro.Codigo;
+      document.getElementById("cardLivro").textContent = "⛔ Bloqueado (Sua 1ª contagem)";
+      document.getElementById("cardEndereco").textContent = livro.Endereco || enderecoFalado;
+      pedirSAPEPosicao(`Atenção ${operadorNome}: você realizou a primeira contagem deste livro. Outro operador deve realizar a dupla conferência. Informe outro código SAP.`);
+      return;
+    }
+
+    // É outro usuário fazendo a 2ª conferência!
+    itemAtual = livro;
+    houveDivergenciaEnd = false;
+    document.getElementById("cardSAP").textContent = livro.Codigo;
+    document.getElementById("cardLivro").textContent = "🔁 2ª Conf.: " + livro.Titulo;
+    document.getElementById("cardEndereco").textContent = `${livro.Endereco || "Sem end."} / ${enderecoFalado}`;
+
+    etapa = "quantidade";
+    falar(`Atenção: essa é a segunda conferência do livro ${livro.Titulo}. Quantas unidades você contou?`, () => escutar(tratarQuantidade), "alerta2a");
+    return;
+  }
+
+  // FLUXO DE 1ª CONTAGEM
   itemAtual = livro;
   document.getElementById("cardSAP").textContent = livro.Codigo;
   document.getElementById("cardLivro").textContent = livro.Titulo;
@@ -491,8 +537,9 @@ function tratarSAPEPosicao(falado) {
 
   const endSis = String(livro.Endereco || "").toLowerCase().replace(/[^a-z0-9]/g, "");
   const bate = (!mCol || endSis.includes(mCol[1])) && (!mNiv || endSis.includes(mNiv[1]));
+  houveDivergenciaEnd = Boolean(livro.Endereco && !bate);
 
-  if (livro.Endereco && !bate) {
+  if (houveDivergenciaEnd) {
     etapa = "divergencia";
     falar(`Atenção: este livro está cadastrado em ${livro.Endereco}, mas você falou ${enderecoFalado}. Diga ocorrência para avisar Amanda, ou diga continuar para contar.`, () => {
       escutar((resp) => {
@@ -539,7 +586,7 @@ async function tratarQuantidade(falado) {
   setEstadoUI("falando", "SALVANDO NA PLANILHA...", `Registrando ${qtd} unidades de ${itemAtual.Titulo}...`);
 
   const url = localStorage.getItem("senai_url_exec");
-  const aluno = localStorage.getItem("senai_aluno") || "Aluno Voz";
+  const email = localStorage.getItem("senai_email");
 
   try {
     const resp = await fetch(url, {
@@ -547,16 +594,23 @@ async function tratarQuantidade(falado) {
       headers: { "Content-Type": "text/plain;charset=utf-8" },
       body: JSON.stringify({
         acao: "registrar",
-        Alunos: aluno,
+        email: email,
         Codigo: itemAtual.Codigo,
         PrimeiraContagem: qtd,
-        Observacao: `Assistente de Voz · Endereço: ${enderecoFalado}`
+        EnderecoInformado: enderecoFalado,
+        DivergenciaEndereco: houveDivergenciaEnd,
+        Observacao: `Assistente de Voz (${operadorNome})`
       })
     });
     const json = await resp.json();
     if (json.ok) {
-      document.getElementById("logRodape").textContent = `✅ Último salvo: SAP ${itemAtual.Codigo} (${qtd} un.) às ${new Date().toLocaleTimeString()}`;
-      pedirSAPEPosicao(`${qtd} unidades registradas! Próximo livro: informe o código SAP, coluna e nível.`);
+      await carregarAcervoRemoto(false); // Atualiza lista de pendentes de 2ª conferência
+      const msgVoz = json.segundaConferencia
+        ? `Segunda conferência registrada com ${qtd} unidades! Próximo livro: informe o código SAP, coluna e nível.`
+        : `${qtd} unidades registradas! Próximo livro: informe o código SAP, coluna e nível.`;
+      pedirSAPEPosicao(msgVoz);
+    } else if (json.bloqueioDuplaConferencia) {
+      pedirSAPEPosicao(json.erro + " Informe outro código SAP.");
     } else {
       falar("Erro ao salvar na planilha: " + (json.erro || "tente novamente."), () => pedirQuantidade("Repita a quantidade."));
     }
@@ -567,14 +621,14 @@ async function tratarQuantidade(falado) {
 
 async function enviarOcorrenciaRemota(sap, titulo, desc) {
   const url = localStorage.getItem("senai_url_exec");
-  const aluno = localStorage.getItem("senai_aluno") || "Aluno Voz";
+  const email = localStorage.getItem("senai_email");
   try {
     await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "text/plain;charset=utf-8" },
       body: JSON.stringify({
         acao: "ocorrencia",
-        Alunos: aluno,
+        email: email,
         Codigo: sap,
         Titulo: titulo,
         Endereco: enderecoFalado,
