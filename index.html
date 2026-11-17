@@ -40,7 +40,6 @@
     width: 100%;
   }
 
-  /* ORBE ESTILO GOOGLE ASSISTENTE */
   .orbe-container {
     position: relative;
     width: 130px;
@@ -145,7 +144,6 @@
   .btn-parar { background: #ef4444; color: #fff; }
   .btn-repetir { background: #334155; color: #f8fafc; }
 
-  /* MODAL DE CONFIGURAÇÃO INICIAL */
   .modal {
     position: fixed;
     inset: 0;
@@ -233,7 +231,6 @@
 
 <div id="logRodape" class="log-rodape">Base desconectada. Configure a URL do Apps Script.</div>
 
-<!-- TELA DE CONFIGURAÇÃO (SALVA NO CELULAR AUTOMATICAMENTE) -->
 <div id="modalConfig" class="modal">
   <div class="modal-box">
     <h2>Conectar à Planilha SENAI</h2>
@@ -252,7 +249,7 @@
 <script>
 let acervoCache = [];
 let ativo = false;
-let etapa = "idle"; // "sap_local" | "divergencia" | "quantidade"
+let etapa = "idle";
 let reconhecimento = null;
 let itemAtual = null;
 let enderecoFalado = "";
@@ -308,9 +305,6 @@ async function carregarAcervoRemoto() {
   }
 }
 
-// ============================================================================
-// MOTOR DE CONVERSA CONTÍNUA (ESTILO GOOGLE ASSISTENTE)
-// ============================================================================
 function setEstadoUI(modo, badge, fala) {
   const orbe = document.getElementById("orbe");
   const st = document.getElementById("statusBadge");
@@ -420,9 +414,6 @@ function processarComandoVoz(texto, callbackEtapa) {
   callbackEtapa(texto);
 }
 
-// ============================================================================
-// ETAPA 1: SAP + COLUNA + NÍVEL
-// ============================================================================
 function pedirSAPEPosicao(mensagemFala) {
   etapa = "sap_local";
   falar(mensagemFala, () => escutar(tratarSAPEPosicao));
@@ -442,10 +433,16 @@ function normalizarDigitos(frase) {
   return out.join(" ");
 }
 
+function limparCodigoSAP(valor) {
+  return String(valor || "").replace(/[^0-9a-zA-Z]/g, "").replace(/^0+/, "");
+}
+
 function tratarSAPEPosicao(falado) {
   const norm = normalizarDigitos(falado);
-  const matchSap = norm.match(/\b\d{4,12}\b/);
-  const sap = matchSap ? matchSap[0] : "";
+
+  const parteAntesEndereco = norm.split(/\b(coluna|nivel|nível|prateleira|estante)\b/i)[0];
+  const todosDigitosSAP = (parteAntesEndereco.match(/\d+/g) || []).join("");
+  const sap = todosDigitosSAP.length >= 3 ? todosDigitosSAP : "";
 
   const mCol = norm.match(/coluna\s*(\d+)/i);
   const mNiv = norm.match(/n[ií]vel\s*(\d+)/i);
@@ -456,17 +453,19 @@ function tratarSAPEPosicao(falado) {
     return;
   }
 
-  const livro = acervoCache.find(l => String(l.Codigo || "").trim() === sap);
+  const sapLimpo = limparCodigoSAP(sap);
+  const livro = acervoCache.find(l => limparCodigoSAP(l.Codigo) === sapLimpo);
+
   if (!livro) {
     document.getElementById("cardSAP").textContent = sap;
-    document.getElementById("cardLivro").textContent = "Não encontrado no cadastro";
+    document.getElementById("cardLivro").textContent = "Não encontrado (" + acervoCache.length + " na base)";
     document.getElementById("cardEndereco").textContent = enderecoFalado;
     pedirSAPEPosicao(`O código SAP ${sap} não está no cadastro. Diga outro código ou verifique a etiqueta.`);
     return;
   }
 
   itemAtual = livro;
-  document.getElementById("cardSAP").textContent = sap;
+  document.getElementById("cardSAP").textContent = livro.Codigo;
   document.getElementById("cardLivro").textContent = livro.Titulo;
   document.getElementById("cardEndereco").textContent = `${livro.Endereco || "Sem end."} / ${enderecoFalado}`;
 
@@ -479,7 +478,7 @@ function tratarSAPEPosicao(falado) {
       escutar((resp) => {
         const r = resp.toLowerCase();
         if (r.includes("ocorr") || r.includes("amanda")) {
-          enviarOcorrenciaRemota(sap, livro.Titulo, `Cadastrado em ${livro.Endereco}, encontrado em ${enderecoFalado}`);
+          enviarOcorrenciaRemota(livro.Codigo, livro.Titulo, `Cadastrado em ${livro.Endereco}, encontrado em ${enderecoFalado}`);
         } else {
           pedirQuantidade(`Ok, prosseguindo. Quantas unidades de ${livro.Titulo} você contou?`);
         }
@@ -491,9 +490,6 @@ function tratarSAPEPosicao(falado) {
   pedirQuantidade(`Livro ${livro.Titulo} confirmado. Quantas unidades você contou?`);
 }
 
-// ============================================================================
-// ETAPA 2: QUANTIDADE E GRAVAÇÃO DIRETA NA PLANILHA
-// ============================================================================
 function pedirQuantidade(mensagemFala) {
   etapa = "quantidade";
   falar(mensagemFala, () => escutar(tratarQuantidade));
@@ -506,66 +502,4 @@ function extrairQtd(frase) {
   const dez = { "dez": 10, "onze": 11, "doze": 12, "treze": 13, "quatorze": 14, "catorze": 14, "quinze": 15, "dezesseis": 16, "dezessete": 17, "dezoito": 18, "dezenove": 19, "vinte": 20, "trinta": 30, "quarenta": 40, "cinquenta": 50, "sessenta": 60, "setenta": 70, "oitenta": 80, "noventa": 90, "cem": 100 };
   const uni = { "zero": 0, "um": 1, "uma": 1, "dois": 2, "duas": 2, "tres": 3, "quatro": 4, "cinco": 5, "seis": 6, "sete": 7, "oito": 8, "nove": 9 };
   let soma = 0, ok = false;
-  frase.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").split(/\s+/).forEach(p => {
-    if (dez[p] !== undefined) { soma += dez[p]; ok = true; }
-    if (uni[p] !== undefined) { soma += uni[p]; ok = true; }
-  });
-  return ok ? soma : NaN;
-}
-
-async function tratarQuantidade(falado) {
-  const qtd = extrairQtd(falado);
-  if (isNaN(qtd) || qtd < 0) {
-    pedirQuantidade("Não entendi o número. Fale apenas a quantidade contada.");
-    return;
-  }
-
-  setEstadoUI("falando", "SALVANDO NA PLANILHA...", `Registrando ${qtd} unidades de ${itemAtual.Titulo}...`);
-
-  const url = localStorage.getItem("senai_url_exec");
-  const aluno = localStorage.getItem("senai_aluno") || "Aluno Voz";
-
-  try {
-    const resp = await fetch(url, {
-      method: "POST",
-      body: JSON.stringify({
-        acao: "registrar",
-        Alunos: aluno,
-        Codigo: itemAtual.Codigo,
-        PrimeiraContagem: qtd,
-        Observacao: `Assistente de Voz · Endereço: ${enderecoFalado}`
-      })
-    });
-    const json = await resp.json();
-    if (json.ok) {
-      document.getElementById("logRodape").textContent = `✅ Último salvo: SAP ${itemAtual.Codigo} (${qtd} un.) às ${new Date().toLocaleTimeString()}`;
-      pedirSAPEPosicao(`${qtd} unidades registradas! Próximo livro: informe o código SAP, coluna e nível.`);
-    } else {
-      falar("Erro ao salvar na planilha: " + (json.erro || "tente novamente."), () => pedirQuantidade("Repita a quantidade."));
-    }
-  } catch (e) {
-    falar("Falha de conexão com a planilha. Verifique a internet e repita a quantidade.", () => pedirQuantidade("Repita a quantidade."));
-  }
-}
-
-async function enviarOcorrenciaRemota(sap, titulo, desc) {
-  const url = localStorage.getItem("senai_url_exec");
-  const aluno = localStorage.getItem("senai_aluno") || "Aluno Voz";
-  try {
-    await fetch(url, {
-      method: "POST",
-      body: JSON.stringify({
-        acao: "ocorrencia",
-        Alunos: aluno,
-        Codigo: sap,
-        Titulo: titulo,
-        Endereco: enderecoFalado,
-        Descricao: desc
-      })
-    });
-  } catch (e) {}
-  pedirQuantidade(`Ocorrência registrada para Amanda. Agora informe quantas unidades de ${titulo} você contou neste local.`);
-}
-</script>
-</body>
-</html>
+  frase.toLowerCase().normalize("NFD").replace
