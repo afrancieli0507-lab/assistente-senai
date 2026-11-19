@@ -399,7 +399,7 @@ function normCodigo(v) {
 }
 
 function normTexto(v) {
-  return String(v ?? "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]/g, "");
+  return String(v ?? "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "");
 }
 
 window.addEventListener("DOMContentLoaded", () => {
@@ -480,7 +480,7 @@ function atualizarPainelProgresso() {
 
   historicoCache.forEach(item => {
     const cod = normCodigo(item.codigo || item.Codigo);
-    const is2a = Boolean(item.segundaContagem || item.SegundaContagem || item.etapa === "2a");
+    const is2a = Boolean(item.segundaContagem !== null && item.segundaContagem !== undefined && item.segundaContagem !== "" || item.etapa === "2a");
     if (cod && is2a) concluidosSet.add(cod);
 
     const op = String(item.operador || item.Alunos || item.ResponsavelConferencia || "").trim();
@@ -523,7 +523,7 @@ function atualizarPainelProgresso() {
     listaContados.innerHTML = `<div class="item-contado" style="justify-content:center;color:#94a3b8">Aguardando primeira contagem...</div>`;
   } else {
     listaContados.innerHTML = [...historicoCache].reverse().slice(0, 40).map(h => {
-      const is2a = Boolean(h.segundaContagem || h.SegundaContagem || h.etapa === "2a");
+      const is2a = Boolean(h.segundaContagem !== null && h.segundaContagem !== undefined && h.segundaContagem !== "" || h.etapa === "2a");
       const qtd = is2a ? (h.segundaContagem ?? h.SegundaContagem) : (h.primeiraContagem ?? h.PrimeiraContagem ?? h.quantidade ?? 0);
       const op = h.operador || h.ResponsavelConferencia || h.Alunos || "Operador";
       return `<div class="item-contado">
@@ -671,23 +671,89 @@ function ouvirComando() {
 }
 
 function extrairNumeroFalado(texto) {
-  const limpo = texto.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+  const limpo = String(texto ?? "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^\w\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (!limpo) return NaN;
+
   const digitos = limpo.match(/\d+/g);
   if (digitos) return Number(digitos.join(""));
-  const mapa = {
-    "zero": 0, "nenhum": 0, "um": 1, "uma": 1, "dois": 2, "duas": 2,
-    "tres": 3, "quatro": 4, "cinco": 5, "seis": 6, "meia": 6,
-    "sete": 7, "oito": 8, "nove": 9, "dez": 10, "onze": 11, "doze": 12,
-    "treze": 13, "quatorze": 14, "catorze": 14, "quinze": 15, "vinte": 20, "trinta": 30
+
+  const unidades = {
+    "zero": 0, "nenhum": 0, "nenhuma": 0, "nada": 0,
+    "um": 1, "uma": 1,
+    "dois": 2, "duas": 2,
+    "tres": 3,
+    "quatro": 4,
+    "cinco": 5,
+    "seis": 6, "meia": 6, "meia duzia": 6,
+    "sete": 7,
+    "oito": 8,
+    "nove": 9,
+    "dez": 10,
+    "onze": 11,
+    "doze": 12, "uma duzia": 12,
+    "treze": 13,
+    "quatorze": 14, "catorze": 14,
+    "quinze": 15,
+    "dezesseis": 16,
+    "dezessete": 17,
+    "dezoito": 18,
+    "dezenove": 19
   };
-  for (const [palavra, valor] of Object.entries(mapa)) {
-    if (new RegExp(`\b${palavra}\b`).test(limpo)) return valor;
+
+  const dezenas = {
+    "vinte": 20,
+    "trinta": 30,
+    "quarenta": 40,
+    "cinquenta": 50,
+    "sessenta": 60,
+    "setenta": 70,
+    "oitenta": 80,
+    "noventa": 90
+  };
+
+  const centenas = {
+    "cem": 100, "cento": 100,
+    "duzentos": 200, "duzentas": 200,
+    "trezentos": 300, "trezentas": 300,
+    "quatrocentos": 400, "quatrocentas": 400,
+    "quinhentos": 500, "quinhentas": 500
+  };
+
+  if (Object.prototype.hasOwnProperty.call(unidades, limpo)) return unidades[limpo];
+  if (Object.prototype.hasOwnProperty.call(dezenas, limpo)) return dezenas[limpo];
+  if (Object.prototype.hasOwnProperty.call(centenas, limpo)) return centenas[limpo];
+
+  // Suporte a números compostos por extenso (ex: "vinte e sete", "cento e quarenta e cinco")
+  const tokens = limpo.split(" ").filter(t => t && t !== "e" && t !== "sao" && t !== "tem" && t !== "livros" && t !== "livro" && t !== "exemplares" && t !== "exemplar" && t !== "unidades" && t !== "unidade");
+  if (!tokens.length) return NaN;
+
+  let total = 0;
+  let encontrouNumero = false;
+  for (const tok of tokens) {
+    if (Object.prototype.hasOwnProperty.call(centenas, tok)) {
+      total += centenas[tok];
+      encontrouNumero = true;
+    } else if (Object.prototype.hasOwnProperty.call(dezenas, tok)) {
+      total += dezenas[tok];
+      encontrouNumero = true;
+    } else if (Object.prototype.hasOwnProperty.call(unidades, tok)) {
+      total += unidades[tok];
+      encontrouNumero = true;
+    }
   }
-  return NaN;
+
+  return encontrouNumero ? total : NaN;
 }
 
 function processarRespostaVoz(texto) {
-  const cmd = texto.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+  const cmd = texto.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
   if (cmd.includes("cancelar") || cmd.includes("recomecar") || cmd.includes("reiniciar")) {
     pedirProximoCodigo();
     return;
