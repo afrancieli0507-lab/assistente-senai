@@ -275,7 +275,7 @@
   .modal-box h2 { font-size: 18px; margin-bottom: 10px; }
   .campo { margin-bottom: 14px; text-align: left; }
   .campo label { display: block; font-size: 13px; color: #cbd5e1; margin-bottom: 5px; font-weight: 600; }
-  .campo input {
+  .campo input, .campo select {
     width: 100%;
     padding: 12px;
     border-radius: 8px;
@@ -300,7 +300,7 @@
     <span class="logo">SENAI</span>
     <span class="titulo-app">Assistente de Inventário</span>
   </div>
-  <button class="btn-config" onclick="abrirConfig()">⚙ Trocar Operador</button>
+  <button class="btn-config" onclick="abrirConfig()">⚙ Trocar Operador / Voz</button>
 </header>
 <main>
   <div id="statusBadge" class="status-badge">PRONTO PARA INICIAR</div>
@@ -373,17 +373,26 @@
 <div id="logRodape" class="log-rodape">Aguardando identificação do operador...</div>
 <div id="modalConfig" class="modal oculto">
   <div class="modal-box">
-    <h2>Identificação do Operador — SENAI</h2>
-    <p style="font-size:13px;color:#94a3b8;margin-bottom:14px">Digite seu e-mail cadastrado na planilha para registrar suas contagens e validar a dupla conferência.</p>
+    <h2>Configuração do Operador e Voz — SENAI</h2>
+    <p style="font-size:13px;color:#94a3b8;margin-bottom:14px">Digite seu e-mail cadastrado na planilha e escolha a voz do assistente.</p>
     <div class="campo">
       <label>Seu E-mail Cadastrado *</label>
       <input id="cfgEmail" type="email" placeholder="Ex: aluno@sp.senai.br">
+    </div>
+    <div class="campo">
+      <label>Voz do Assistente</label>
+      <div style="display:flex;gap:8px">
+        <select id="cfgVoz" style="flex:1;font-size:14px">
+          <option value="">Padrão do aparelho</option>
+        </select>
+        <button type="button" onclick="testarVozSelecionada()" style="padding:0 14px;border-radius:8px;border:0;background:#3b82f6;color:#fff;font-weight:700;cursor:pointer;white-space:nowrap">🔊 Testar</button>
+      </div>
     </div>
     <div class="campo" style="display:none">
       <label>URL do App da Web (/exec) *</label>
       <input id="cfgUrl">
     </div>
-    <button id="btnSalvarCfg" class="btn btn-iniciar" style="width:100%" onclick="salvarConfig()">Validar Meu E-mail e Entrar</button>
+    <button id="btnSalvarCfg" class="btn btn-iniciar" style="width:100%" onclick="salvarConfig()">Salvar e Entrar</button>
   </div>
 </div>
 
@@ -401,6 +410,7 @@ let ultimaFalaTexto = "";
 let quantidadePendente = 0;
 let inicioSessaoLocalMs = null;
 let ocorrenciasLivroAtual = [];
+let vozesDisponiveis = [];
 
 function esc(v) {
   return String(v ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -410,7 +420,43 @@ function normCodigo(v) {
   return String(v ?? "").trim().replace(/^0+/, "");
 }
 
+function carregarVozes() {
+  if (!("speechSynthesis" in window)) return;
+  const todas = window.speechSynthesis.getVoices();
+  vozesDisponiveis = todas.filter(v => v.lang.toLowerCase().startsWith("pt"));
+  const select = document.getElementById("cfgVoz");
+  if (!select) return;
+  const vozSalva = localStorage.getItem("senai_voz_nome") || "";
+  select.innerHTML = `<option value="">Padrão do aparelho</option>` +
+    vozesDisponiveis.map(v =>
+      `<option value="${esc(v.name)}" ${v.name === vozSalva ? "selected" : ""}>${esc(v.name)} (${esc(v.lang)})</option>`
+    ).join("");
+}
+
+if ("speechSynthesis" in window) {
+  window.speechSynthesis.onvoiceschanged = carregarVozes;
+}
+
+function testarVozSelecionada() {
+  if (!("speechSynthesis" in window)) {
+    alert("Seu navegador não suporta síntese de voz.");
+    return;
+  }
+  const select = document.getElementById("cfgVoz");
+  const nomeVoz = select ? select.value : "";
+  window.speechSynthesis.cancel();
+  const utter = new SpeechSynthesisUtterance("Olá! Esta é a voz selecionada para o inventário do SENAI.");
+  utter.lang = "pt-BR";
+  utter.rate = 1.05;
+  if (nomeVoz) {
+    const objVoz = vozesDisponiveis.find(v => v.name === nomeVoz);
+    if (objVoz) utter.voice = objVoz;
+  }
+  window.speechSynthesis.speak(utter);
+}
+
 window.addEventListener("DOMContentLoaded", () => {
+  carregarVozes();
   const params = new URLSearchParams(window.location.search);
   const emailParam = params.get("email");
   const urlParam = params.get("url");
@@ -429,23 +475,26 @@ window.addEventListener("DOMContentLoaded", () => {
 
 function abrirConfig() {
   pararAssistente();
+  carregarVozes();
   document.getElementById("modalConfig").classList.remove("oculto");
 }
 
 async function salvarConfig() {
   const url = document.getElementById("cfgUrl").value.trim() || URL_APPS_SCRIPT_PADRAO;
   const email = document.getElementById("cfgEmail").value.trim().toLowerCase();
+  const vozEscolhida = document.getElementById("cfgVoz") ? document.getElementById("cfgVoz").value : "";
   if (!email.includes("@")) {
     alert("Informe seu e-mail válido cadastrado na planilha.");
     return;
   }
   localStorage.setItem("senai_url_exec", url);
   localStorage.setItem("senai_email", email);
+  localStorage.setItem("senai_voz_nome", vozEscolhida);
   const btn = document.getElementById("btnSalvarCfg");
   btn.textContent = "Validando na planilha...";
   btn.disabled = true;
   await carregarAcervoRemoto(true);
-  btn.textContent = "Validar Meu E-mail e Entrar";
+  btn.textContent = "Salvar e Entrar";
   btn.disabled = false;
 }
 
@@ -568,6 +617,11 @@ function falar(texto, callbackPosFala) {
   const utter = new SpeechSynthesisUtterance(texto);
   utter.lang = "pt-BR";
   utter.rate = 1.05;
+  const vozSalva = localStorage.getItem("senai_voz_nome");
+  if (vozSalva && vozesDisponiveis.length) {
+    const objVoz = vozesDisponiveis.find(v => v.name === vozSalva);
+    if (objVoz) utter.voice = objVoz;
+  }
   utter.onend = () => {
     if (ativo && callbackPosFala) {
       callbackPosFala();
