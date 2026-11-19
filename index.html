@@ -29,7 +29,6 @@
   .logo { font-weight: 900; font-size: 20px; letter-spacing: 1px; background: #fff; color: #e30613; padding: 4px 10px; border-radius: 5px; }
   .titulo-app { font-size: 14px; font-weight: 600; opacity: 0.95; }
   .btn-config { background: rgba(255,255,255,0.2); border: 0; color: #fff; padding: 8px 12px; border-radius: 8px; font-size: 13px; cursor: pointer; }
-
   main {
     flex: 1;
     display: flex;
@@ -41,7 +40,6 @@
     margin: 0 auto;
     width: 100%;
   }
-
   .orbe-container {
     position: relative;
     width: 120px;
@@ -88,7 +86,6 @@
     0% { transform: scale(0.75); opacity: 0.9; }
     100% { transform: scale(1.35); opacity: 0; }
   }
-
   .status-badge {
     font-size: 12px;
     font-weight: 700;
@@ -103,7 +100,6 @@
   .status-badge.ouvindo { background: rgba(239, 68, 68, 0.2); color: #fca5a5; }
   .status-badge.falando { background: rgba(16, 185, 129, 0.2); color: #6ee7b7; }
   .status-badge.alerta2a { background: rgba(245, 158, 11, 0.25); color: #fcd34d; }
-
   .fala-assistente {
     font-size: 19px;
     font-weight: 600;
@@ -119,7 +115,6 @@
     min-height: 22px;
     margin-bottom: 14px;
   }
-
   .card-item {
     background: #1e293b;
     border: 1px solid #334155;
@@ -132,7 +127,6 @@
   .card-item small { color: #94a3b8; font-size: 11px; text-transform: uppercase; display: block; }
   .card-item strong { font-size: 15px; color: #f8fafc; display: block; margin-top: 2px; }
   .card-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; padding-top: 10px; border-top: 1px solid #334155; }
-
   .controles { display: flex; gap: 10px; width: 100%; margin-bottom: 22px; }
   .btn {
     flex: 1;
@@ -146,7 +140,6 @@
   .btn-iniciar { background: #10b981; color: #064e3b; }
   .btn-parar { background: #ef4444; color: #fff; }
   .btn-repetir { background: #334155; color: #f8fafc; }
-
   .secao-painel {
     width: 100%;
     text-align: left;
@@ -180,7 +173,6 @@
   .kpi-box strong { display: block; font-size: 20px; font-weight: 800; margin-top: 4px; color: #fff; }
   .kpi-box.verde strong { color: #34d399; }
   .kpi-box.amarelo strong { color: #fbbf24; }
-
   .barra-progresso-wrap {
     width: 100%;
     height: 10px;
@@ -196,7 +188,6 @@
     background: linear-gradient(90deg, #10b981, #34d399);
     transition: width 0.5s ease;
   }
-
   .lista-tempos {
     display: flex;
     flex-direction: column;
@@ -224,7 +215,6 @@
     font-size: 12px;
     white-space: nowrap;
   }
-
   .lista-contados {
     display: flex;
     flex-direction: column;
@@ -253,7 +243,6 @@
   }
   .badge-1a { background: rgba(59, 130, 246, 0.2); color: #93c5fd; }
   .badge-2a { background: rgba(16, 185, 129, 0.2); color: #6ee7b7; }
-
   .modal {
     position: fixed;
     inset: 0;
@@ -296,7 +285,6 @@
 </style>
 </head>
 <body>
-
 <header>
   <div style="display:flex;align-items:center;gap:10px">
     <span class="logo">SENAI</span>
@@ -304,20 +292,16 @@
   </div>
   <button class="btn-config" onclick="abrirConfig()">⚙ Trocar Operador</button>
 </header>
-
 <main>
   <div id="statusBadge" class="status-badge">PRONTO PARA INICIAR</div>
-
   <div class="orbe-container" onclick="alternarAssistente()">
     <div id="orbe" class="orbe">🎤</div>
     <div class="onda"></div>
   </div>
-
   <div id="falaAssistente" class="fala-assistente">
     Toque no microfone ou em Iniciar para começar a contagem por voz.
   </div>
   <div id="falaUsuario" class="fala-usuario"></div>
-
   <div class="card-item">
     <small>Último Livro Identificado</small>
     <strong id="cardLivro">Aguardando comando de voz...</strong>
@@ -332,13 +316,11 @@
       </div>
     </div>
   </div>
-
   <div class="controles">
     <button id="btnIniciar" class="btn btn-iniciar" onclick="iniciarAssistente()">▶ Iniciar Assistente</button>
     <button id="btnParar" class="btn btn-parar" onclick="pararAssistente()" style="display:none">⏹ Parar</button>
     <button class="btn btn-repetir" onclick="repetirUltimaFala()">🔁 Repetir</button>
   </div>
-
   <section class="secao-painel">
     <div class="secao-titulo">
       <span>📊 Progresso Geral do Inventário</span>
@@ -361,14 +343,12 @@
     <div class="barra-progresso-wrap">
       <div id="barraProgressoFill" class="barra-progresso-fill"></div>
     </div>
-
     <div class="secao-titulo">
       <span>⏱ Tempo de Conferência por Operador</span>
     </div>
     <div id="listaTempos" class="lista-tempos">
       <div class="item-tempo" style="justify-content:center;color:#94a3b8">Nenhuma conferência registrada ainda.</div>
     </div>
-
     <div class="secao-titulo">
       <span>📚 Livros Contados (<span id="qtdLivrosContados">0</span>)</span>
     </div>
@@ -377,9 +357,7 @@
     </div>
   </section>
 </main>
-
 <div id="logRodape" class="log-rodape">Aguardando identificação do operador...</div>
-
 <div id="modalConfig" class="modal oculto">
   <div class="modal-box">
     <h2>Identificação do Operador — SENAI</h2>
@@ -398,7 +376,6 @@
 
 <script>
 const URL_APPS_SCRIPT_PADRAO = "https://script.google.com/macros/s/AKfycbzk9YiiIqeZMPluZtlSnQYGg8EHIxKvYfUR2I-JJlFkSc1VUSQWiNA9MBD6q_RfOTQ/exec";
-
 let acervoCache = [];
 let pendentes2aCache = {};
 let historicoCache = [];
@@ -413,17 +390,26 @@ let ultimaFalaTexto = "";
 let quantidadePendente = 0;
 let inicioSessaoLocalMs = null;
 
+function esc(v) {
+  return String(v ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+function normCodigo(v) {
+  return String(v ?? "").trim().replace(/^0+/, "");
+}
+
+function normTexto(v) {
+  return String(v ?? "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]/g, "");
+}
+
 window.addEventListener("DOMContentLoaded", () => {
   const params = new URLSearchParams(window.location.search);
   const emailParam = params.get("email");
   const urlParam = params.get("url");
-
   const urlFinal = (urlParam && urlParam.includes("/exec") ? urlParam.trim() : "") || localStorage.getItem("senai_url_exec") || URL_APPS_SCRIPT_PADRAO;
   localStorage.setItem("senai_url_exec", urlFinal);
   document.getElementById("cfgUrl").value = urlFinal;
-
   const emailFinal = (emailParam ? emailParam.trim().toLowerCase() : "") || localStorage.getItem("senai_email") || "";
-
   if (emailFinal) {
     localStorage.setItem("senai_email", emailFinal);
     document.getElementById("cfgEmail").value = emailFinal;
@@ -447,13 +433,10 @@ async function salvarConfig() {
   }
   localStorage.setItem("senai_url_exec", url);
   localStorage.setItem("senai_email", email);
-
   const btn = document.getElementById("btnSalvarCfg");
   btn.textContent = "Validando na planilha...";
   btn.disabled = true;
-
   await carregarAcervoRemoto(true);
-
   btn.textContent = "Validar Meu E-mail e Entrar";
   btn.disabled = false;
 }
@@ -463,7 +446,6 @@ async function carregarAcervoRemoto(fecharModalSeOk) {
   const email = localStorage.getItem("senai_email");
   const rodape = document.getElementById("logRodape");
   rodape.textContent = `Validando ${email} na planilha...`;
-
   try {
     const resp = await fetch(url, {
       method: "POST",
@@ -471,11 +453,377 @@ async function carregarAcervoRemoto(fecharModalSeOk) {
       body: JSON.stringify({ acao: "consultar_acervo", email: email })
     });
     const json = await resp.json();
-
     if (json.ok && Array.isArray(json.acervo)) {
       acervoCache = json.acervo;
       pendentes2aCache = json.pendentes2a || {};
       historicoCache = Array.isArray(json.historico) ? json.historico : [];
       operadorNome = json.operador || email;
       const qtdPend = Object.keys(pendentes2aCache).length;
-      rodape.textContent = `✅ ${
+      rodape.textContent = `✅ ${operadorNome} (${email}) · ${acervoCache.length} SKUs carregados · ${qtdPend} aguardando 2ª conf.`;
+      if (fecharModalSeOk) {
+        document.getElementById("modalConfig").classList.add("oculto");
+      }
+      atualizarPainelProgresso();
+    } else {
+      rodape.textContent = `❌ ${json.mensagem || "E-mail não autorizado na planilha."}`;
+      document.getElementById("modalConfig").classList.remove("oculto");
+    }
+  } catch (err) {
+    rodape.textContent = `❌ Falha de conexão com a planilha: ${err.message || err}`;
+  }
+}
+
+function atualizarPainelProgresso() {
+  const totalSkus = acervoCache.length;
+  const concluidosSet = new Set();
+  const operadoresMap = {};
+
+  historicoCache.forEach(item => {
+    const cod = normCodigo(item.codigo || item.Codigo);
+    const is2a = Boolean(item.segundaContagem || item.SegundaContagem || item.etapa === "2a");
+    if (cod && is2a) concluidosSet.add(cod);
+
+    const op = String(item.operador || item.Alunos || item.ResponsavelConferencia || "").trim();
+    if (op) {
+      if (!operadoresMap[op]) operadoresMap[op] = { qtd: 0, tempoSeg: 0 };
+      operadoresMap[op].qtd += 1;
+      operadoresMap[op].tempoSeg += Number(item.tempoSegundos || 25);
+    }
+  });
+
+  const qtdConcluidos = concluidosSet.size;
+  const pctConcluido = totalSkus > 0 ? Math.min(100, Math.round((qtdConcluidos / totalSkus) * 100)) : 0;
+  const pctFaltante = Math.max(0, 100 - pctConcluido);
+
+  document.getElementById("txtProgressoDetalhe").textContent = `${qtdConcluidos} / ${totalSkus} SKUs`;
+  document.getElementById("kpiTotalSkus").textContent = totalSkus;
+  document.getElementById("kpiConcluido").textContent = `${pctConcluido}%`;
+  document.getElementById("kpiFaltante").textContent = `${pctFaltante}%`;
+  document.getElementById("barraProgressoFill").style.width = `${pctConcluido}%`;
+
+  const listaTempos = document.getElementById("listaTempos");
+  const ops = Object.entries(operadoresMap);
+  if (!ops.length) {
+    listaTempos.innerHTML = `<div class="item-tempo" style="justify-content:center;color:#94a3b8">Nenhuma conferência registrada ainda.</div>`;
+  } else {
+    listaTempos.innerHTML = ops.map(([nome, info]) => {
+      const min = Math.floor(info.tempoSeg / 60);
+      const seg = info.tempoSeg % 60;
+      const tempoFmt = min > 0 ? `${min}m ${seg}s` : `${seg}s`;
+      return `<div class="item-tempo">
+        <div><span class="nome-op">${esc(nome)}</span><span class="det-op">${info.qtd} ${info.qtd === 1 ? "item conferido" : "itens conferidos"}</span></div>
+        <span class="badge-tempo">⏱ ${tempoFmt}</span>
+      </div>`;
+    }).join("");
+  }
+
+  const listaContados = document.getElementById("listaLivrosContados");
+  document.getElementById("qtdLivrosContados").textContent = historicoCache.length;
+  if (!historicoCache.length) {
+    listaContados.innerHTML = `<div class="item-contado" style="justify-content:center;color:#94a3b8">Aguardando primeira contagem...</div>`;
+  } else {
+    listaContados.innerHTML = [...historicoCache].reverse().slice(0, 40).map(h => {
+      const is2a = Boolean(h.segundaContagem || h.SegundaContagem || h.etapa === "2a");
+      const qtd = is2a ? (h.segundaContagem ?? h.SegundaContagem) : (h.primeiraContagem ?? h.PrimeiraContagem ?? h.quantidade ?? 0);
+      const op = h.operador || h.ResponsavelConferencia || h.Alunos || "Operador";
+      return `<div class="item-contado">
+        <div>
+          <h4>${esc(h.titulo || h.Titulo || "Livro")}</h4>
+          <p>SAP: <b>${esc(h.codigo || h.Codigo)}</b> · Qtd: <b>${esc(qtd)}</b> · ${esc(op)}</p>
+        </div>
+        <span class="badge-conf ${is2a ? "badge-2a" : "badge-1a"}">${is2a ? "2ª Conf." : "1ª Conf."}</span>
+      </div>`;
+    }).join("");
+  }
+}
+
+function setEstadoVisual(estado, textoBadge) {
+  const orbe = document.getElementById("orbe");
+  const badge = document.getElementById("statusBadge");
+  orbe.className = "orbe" + (estado ? " " + estado : "");
+  badge.className = "status-badge" + (estado ? " " + estado : "");
+  badge.textContent = textoBadge;
+}
+
+function falar(texto, callbackPosFala) {
+  ultimaFalaTexto = texto;
+  document.getElementById("falaAssistente").textContent = texto;
+  if (!("speechSynthesis" in window)) {
+    if (callbackPosFala) callbackPosFala();
+    return;
+  }
+  window.speechSynthesis.cancel();
+  if (reconhecimento) {
+    try { reconhecimento.abort(); } catch (e) {}
+  }
+  setEstadoVisual("falando", "ASSISTENTE FALANDO...");
+  const utter = new SpeechSynthesisUtterance(texto);
+  utter.lang = "pt-BR";
+  utter.rate = 1.05;
+  utter.onend = () => {
+    if (ativo && callbackPosFala) {
+      callbackPosFala();
+    } else if (!ativo) {
+      setEstadoVisual("", "PAUSADO");
+    }
+  };
+  utter.onerror = () => {
+    if (ativo && callbackPosFala) callbackPosFala();
+  };
+  window.speechSynthesis.speak(utter);
+}
+
+function repetirUltimaFala() {
+  if (!ultimaFalaTexto) return;
+  falar(ultimaFalaTexto, () => {
+    if (ativo && etapa !== "idle") ouvirComando();
+  });
+}
+
+function alternarAssistente() {
+  if (ativo) {
+    pararAssistente();
+  } else {
+    iniciarAssistente();
+  }
+}
+
+async function iniciarAssistente() {
+  const email = localStorage.getItem("senai_email");
+  if (!email) {
+    abrirConfig();
+    return;
+  }
+  if (!acervoCache.length) {
+    await carregarAcervoRemoto(true);
+    if (!acervoCache.length) return;
+  }
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    alert("Seu navegador não suporta reconhecimento de voz. Use o Google Chrome no celular ou computador.");
+    return;
+  }
+  ativo = true;
+  document.getElementById("btnIniciar").style.display = "none";
+  document.getElementById("btnParar").style.display = "block";
+  pedirProximoCodigo();
+}
+
+function pararAssistente() {
+  ativo = false;
+  etapa = "idle";
+  if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+  if (reconhecimento) {
+    try { reconhecimento.abort(); } catch (e) {}
+  }
+  document.getElementById("btnIniciar").style.display = "block";
+  document.getElementById("btnParar").style.display = "none";
+  setEstadoVisual("", "PAUSADO");
+}
+
+function pedirProximoCodigo() {
+  itemAtual = null;
+  enderecoFalado = "";
+  houveDivergenciaEnd = false;
+  quantidadePendente = 0;
+  etapa = "codigo";
+  document.getElementById("falaUsuario").textContent = "";
+  falar("Diga o código SAP do livro.", () => ouvirComando());
+}
+
+function ouvirComando() {
+  if (!ativo) return;
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  reconhecimento = new SpeechRecognition();
+  reconhecimento.lang = "pt-BR";
+  reconhecimento.interimResults = false;
+  reconhecimento.maxAlternatives = 1;
+
+  reconhecimento.onstart = () => {
+    setEstadoVisual("ouvindo", "OUVINDO VOCÊ...");
+  };
+
+  reconhecimento.onresult = (event) => {
+    const transcricao = event.results[0][0].transcript.trim();
+    document.getElementById("falaUsuario").textContent = `Você disse: "${transcricao}"`;
+    processarRespostaVoz(transcricao);
+  };
+
+  reconhecimento.onerror = (event) => {
+    if (!ativo) return;
+    if (event.error === "no-speech" || event.error === "aborted") {
+      setTimeout(() => { if (ativo) ouvirComando(); }, 400);
+    } else {
+      setEstadoVisual("", "ERRO NO MICROFONE");
+      document.getElementById("logRodape").textContent = `Erro de áudio: ${event.error}. Toque no microfone para tentar novamente.`;
+    }
+  };
+
+  reconhecimento.onend = () => {
+    if (ativo && document.getElementById("statusBadge").textContent === "OUVINDO VOCÊ...") {
+      setTimeout(() => { if (ativo) ouvirComando(); }, 350);
+    }
+  };
+
+  try {
+    reconhecimento.start();
+  } catch (e) {}
+}
+
+function extrairNumeroFalado(texto) {
+  const limpo = texto.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+  const digitos = limpo.match(/\d+/g);
+  if (digitos) return Number(digitos.join(""));
+  const mapa = {
+    "zero": 0, "nenhum": 0, "um": 1, "uma": 1, "dois": 2, "duas": 2,
+    "tres": 3, "quatro": 4, "cinco": 5, "seis": 6, "meia": 6,
+    "sete": 7, "oito": 8, "nove": 9, "dez": 10, "onze": 11, "doze": 12,
+    "treze": 13, "quatorze": 14, "catorze": 14, "quinze": 15, "vinte": 20, "trinta": 30
+  };
+  for (const [palavra, valor] of Object.entries(mapa)) {
+    if (new RegExp(`\b${palavra}\b`).test(limpo)) return valor;
+  }
+  return NaN;
+}
+
+function processarRespostaVoz(texto) {
+  const cmd = texto.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+  if (cmd.includes("cancelar") || cmd.includes("recomecar") || cmd.includes("reiniciar")) {
+    pedirProximoCodigo();
+    return;
+  }
+  if (cmd.includes("parar assistente") || cmd.includes("encerrar")) {
+    pararAssistente();
+    return;
+  }
+
+  if (etapa === "codigo") {
+    const digitos = texto.replace(/\D/g, "");
+    if (!digitos) {
+      falar("Não entendi o código SAP. Por favor, diga apenas os números do código.", () => ouvirComando());
+      return;
+    }
+    const codBusca = normCodigo(digitos);
+    const encontrado = acervoCache.find(l => normCodigo(l.codigo || l.Codigo) === codBusca);
+    if (!encontrado) {
+      falar(`Código ${digitos} não encontrado no acervo inventariável. Diga outro código.`, () => ouvirComando());
+      return;
+    }
+
+    const pend2a = pendentes2aCache[codBusca] || pendentes2aCache[String(encontrado.codigo || encontrado.Codigo).trim()];
+    if (pend2a) {
+      const primeiroOp = String(pend2a.operador || pend2a.Alunos || "").trim().toLowerCase();
+      const emailAtual = String(localStorage.getItem("senai_email") || "").trim().toLowerCase();
+      if (primeiroOp && (primeiroOp === operadorNome.toLowerCase() || primeiroOp === emailAtual)) {
+        setEstadoVisual("alerta2a", "BLOQUEIO DUPLA CONFERÊNCIA");
+        falar(`Atenção: você já realizou a primeira contagem deste livro. A segunda conferência precisa ser feita por outro operador. Diga o próximo código SAP.`, () => ouvirComando());
+        return;
+      }
+    }
+
+    itemAtual = encontrado;
+    inicioSessaoLocalMs = Date.now();
+    const codExibir = encontrado.codigo || encontrado.Codigo;
+    const titExibir = encontrado.titulo || encontrado.Titulo;
+    const endExibir = encontrado.endereco || encontrado.Endereco || "Sem endereço";
+
+    document.getElementById("cardLivro").textContent = titExibir;
+    document.getElementById("cardSAP").textContent = codExibir;
+    document.getElementById("cardEndereco").textContent = `${endExibir} / —`;
+
+    etapa = "endereco";
+    const aviso2a = pend2a ? "Atenção, segunda conferência. " : "";
+    falar(`${aviso2a}Livro ${titExibir}. Qual o endereço físico na prateleira?`, () => ouvirComando());
+    return;
+  }
+
+  if (etapa === "endereco") {
+    enderecoFalado = texto.trim();
+    const endPlanilha = String(itemAtual.endereco || itemAtual.Endereco || "").trim();
+    document.getElementById("cardEndereco").textContent = `${endPlanilha || "—"} / ${enderecoFalado}`;
+    houveDivergenciaEnd = normTexto(endPlanilha) !== normTexto(enderecoFalado);
+    etapa = "quantidade";
+    const avisoEnd = houveDivergenciaEnd && endPlanilha
+      ? `Endereço divergente do sistema, que indica ${endPlanilha}. Registrarei a observação. `
+      : "";
+    falar(`${avisoEnd}Qual a quantidade contada?`, () => ouvirComando());
+    return;
+  }
+
+  if (etapa === "quantidade") {
+    const qtd = extrairNumeroFalado(texto);
+    if (!Number.isInteger(qtd) || qtd < 0) {
+      falar("Não entendi a quantidade. Diga um número inteiro, por exemplo: doze ou zero.", () => ouvirComando());
+      return;
+    }
+    quantidadePendente = qtd;
+    etapa = "confirmacao";
+    falar(`Confirma ${qtd} ${qtd === 1 ? "exemplar" : "exemplares"} para o livro ${itemAtual.titulo || itemAtual.Titulo}? Diga sim ou não.`, () => ouvirComando());
+    return;
+  }
+
+  if (etapa === "confirmacao") {
+    if (cmd.includes("sim") || cmd.includes("confirmo") || cmd.includes("pode") || cmd.includes("correto") || cmd.includes("ok")) {
+      enviarContagemPlanilha();
+    } else if (cmd.includes("nao") || cmd.includes("errado") || cmd.includes("corrigir")) {
+      etapa = "quantidade";
+      falar("Certo. Diga novamente a quantidade contada.", () => ouvirComando());
+    } else {
+      falar("Por favor, diga sim para gravar na planilha ou não para corrigir a quantidade.", () => ouvirComando());
+    }
+  }
+}
+
+async function enviarContagemPlanilha() {
+  const url = localStorage.getItem("senai_url_exec") || URL_APPS_SCRIPT_PADRAO;
+  const email = localStorage.getItem("senai_email");
+  const codigo = itemAtual.codigo || itemAtual.Codigo;
+  const titulo = itemAtual.titulo || itemAtual.Titulo;
+  const endPlanilha = itemAtual.endereco || itemAtual.Endereco || "";
+  const tempoSeg = inicioSessaoLocalMs ? Math.max(5, Math.round((Date.now() - inicioSessaoLocalMs) / 1000)) : 20;
+  const obs = houveDivergenciaEnd
+    ? `By Voice · Endereço divergente (Planilha: ${endPlanilha || "vazio"} | Falado: ${enderecoFalado})`
+    : `By Voice · Endereço confirmado: ${enderecoFalado}`;
+
+  setEstadoVisual("falando", "GRAVANDO NA PLANILHA...");
+  document.getElementById("falaAssistente").textContent = "Gravando contagem na planilha...";
+
+  try {
+    const resp = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({
+        acao: "registrar_contagem",
+        email: email,
+        codigo: codigo,
+        titulo: titulo,
+        quantidade: quantidadePendente,
+        enderecoFalado: enderecoFalado,
+        divergenciaEndereco: houveDivergenciaEnd,
+        observacao: obs,
+        tempoSegundos: tempoSeg
+      })
+    });
+    const json = await resp.json();
+    if (!json.ok) {
+      falar(`Não foi possível gravar: ${json.mensagem || "erro na planilha"}. Diga o próximo código SAP.`, () => ouvirComando());
+      return;
+    }
+
+    await carregarAcervoRemoto(false);
+    falar(`${json.mensagem || "Contagem registrada com sucesso."} Diga o próximo código SAP.`, () => {
+      itemAtual = null;
+      enderecoFalado = "";
+      houveDivergenciaEnd = false;
+      quantidadePendente = 0;
+      etapa = "codigo";
+      document.getElementById("falaUsuario").textContent = "";
+      ouvirComando();
+    });
+  } catch (err) {
+    falar("Erro de conexão ao salvar. Diga sim para tentar enviar novamente ou cancelar.", () => ouvirComando());
+  }
+}
+</script>
+</body>
+</html>
