@@ -113,7 +113,17 @@
     color: #94a3b8;
     font-style: italic;
     min-height: 22px;
+    margin-bottom: 10px;
+  }
+  .dica-voz {
+    font-size: 12px;
+    color: #cbd5e1;
+    background: rgba(245, 158, 11, 0.14);
+    border: 1px solid rgba(245, 158, 11, 0.35);
+    border-radius: 10px;
+    padding: 8px 12px;
     margin-bottom: 14px;
+    width: 100%;
   }
   .card-item {
     background: #1e293b;
@@ -302,6 +312,9 @@
     Toque no microfone ou em Iniciar para começar a contagem por voz.
   </div>
   <div id="falaUsuario" class="fala-usuario"></div>
+  <div class="dica-voz">
+    💡 A qualquer momento, diga <b>"divergência..."</b> ou <b>"avaria..."</b> para abrir uma Não Conformidade automaticamente.
+  </div>
   <div class="card-item">
     <small>Último Livro Identificado</small>
     <strong id="cardLivro">Aguardando comando de voz...</strong>
@@ -311,7 +324,7 @@
         <strong id="cardSAP">—</strong>
       </div>
       <div>
-        <small>End. Planilha / Falado</small>
+        <small>Localização no Sistema</small>
         <strong id="cardEndereco">—</strong>
       </div>
     </div>
@@ -384,11 +397,10 @@ let ativo = false;
 let etapa = "idle";
 let reconhecimento = null;
 let itemAtual = null;
-let enderecoFalado = "";
-let houveDivergenciaEnd = false;
 let ultimaFalaTexto = "";
 let quantidadePendente = 0;
 let inicioSessaoLocalMs = null;
+let ocorrenciasLivroAtual = [];
 
 function esc(v) {
   return String(v ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -396,10 +408,6 @@ function esc(v) {
 
 function normCodigo(v) {
   return String(v ?? "").trim().replace(/^0+/, "");
-}
-
-function normTexto(v) {
-  return String(v ?? "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "");
 }
 
 window.addEventListener("DOMContentLoaded", () => {
@@ -623,9 +631,8 @@ function pararAssistente() {
 
 function pedirProximoCodigo() {
   itemAtual = null;
-  enderecoFalado = "";
-  houveDivergenciaEnd = false;
   quantidadePendente = 0;
+  ocorrenciasLivroAtual = [];
   etapa = "codigo";
   document.getElementById("falaUsuario").textContent = "";
   falar("Diga o código SAP do livro.", () => ouvirComando());
@@ -730,7 +737,6 @@ function extrairNumeroFalado(texto) {
   if (Object.prototype.hasOwnProperty.call(dezenas, limpo)) return dezenas[limpo];
   if (Object.prototype.hasOwnProperty.call(centenas, limpo)) return centenas[limpo];
 
-  // Suporte a números compostos por extenso (ex: "vinte e sete", "cento e quarenta e cinco")
   const tokens = limpo.split(" ").filter(t => t && t !== "e" && t !== "sao" && t !== "tem" && t !== "livros" && t !== "livro" && t !== "exemplares" && t !== "exemplar" && t !== "unidades" && t !== "unidade");
   if (!tokens.length) return NaN;
 
@@ -752,8 +758,65 @@ function extrairNumeroFalado(texto) {
   return encontrouNumero ? total : NaN;
 }
 
+function formatarLocalizacaoParaFala(end) {
+  const e = String(end || "").trim().toUpperCase();
+  if (!e) return "sem localização cadastrada";
+  const m = e.match(/^C(\d+)N(\d+)$/);
+  if (m) return `coluna ${Number(m[1])}, nível ${Number(m[2])}`;
+  return e;
+}
+
+function perguntaDaEtapaAtual() {
+  if (!itemAtual) return "Diga o código SAP do livro.";
+  if (etapa === "quantidade") {
+    return "Qual a quantidade contada?";
+  }
+  if (etapa === "confirmacao") {
+    return `Confirma ${quantidadePendente} ${quantidadePendente === 1 ? "exemplar" : "exemplares"}? Diga sim ou não.`;
+  }
+  return "Diga o código SAP do livro.";
+}
+
+async function registrarOcorrenciaVoz(textoOriginal, cmdNormalizado) {
+  const url = localStorage.getItem("senai_url_exec") || URL_APPS_SCRIPT_PADRAO;
+  const email = localStorage.getItem("senai_email");
+  const isAvaria = cmdNormalizado.includes("avaria");
+  const tipoNC = isAvaria ? "Avaria" : "Divergência";
+  const codigo = itemAtual ? (itemAtual.codigo || itemAtual.Codigo) : "";
+  const titulo = itemAtual ? (itemAtual.titulo || itemAtual.Titulo) : "Ocorrência geral por voz";
+  const endereco = itemAtual ? (itemAtual.endereco || itemAtual.Endereco || "") : "";
+
+  ocorrenciasLivroAtual.push(`${tipoNC}: ${textoOriginal}`);
+  setEstadoVisual("alerta2a", `ABRINDO NC (${tipoNC.toUpperCase()})...`);
+  document.getElementById("falaAssistente").textContent = `Registrando não conformidade (${tipoNC})...`;
+
+  try {
+    const resp = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({
+        acao: "ocorrencia",
+        email: email,
+        codigo: codigo,
+        titulo: titulo,
+        endereco: endereco,
+        tipo: tipoNC,
+        descricao: `Relato By Voice (${tipoNC}): "${textoOriginal}"`
+      })
+    });
+    const json = await resp.json();
+    const aviso = json.ok
+      ? `Não conformidade de ${tipoNC.toLowerCase()} aberta com sucesso. `
+      : `Atenção: não consegui gravar a não conformidade agora, mas anotei na observação. `;
+    falar(aviso + perguntaDaEtapaAtual(), () => ouvirComando());
+  } catch (e) {
+    falar(`Não conformidade anotada. ` + perguntaDaEtapaAtual(), () => ouvirComando());
+  }
+}
+
 function processarRespostaVoz(texto) {
   const cmd = texto.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
   if (cmd.includes("cancelar") || cmd.includes("recomecar") || cmd.includes("reiniciar")) {
     pedirProximoCodigo();
     return;
@@ -763,6 +826,13 @@ function processarRespostaVoz(texto) {
     return;
   }
 
+  // Em QUALQUER momento da conversa, se o aluno mencionar "divergencia" ou "avaria", abre Não Conformidade e retoma o fluxo
+  if (cmd.includes("divergencia") || cmd.includes("divergente") || cmd.includes("avaria") || cmd.includes("avariado") || cmd.includes("danificado")) {
+    registrarOcorrenciaVoz(texto, cmd);
+    return;
+  }
+
+  // ETAPA 1: CÓDIGO SAP -> FALA TÍTULO + LOCALIZAÇÃO DA PLANILHA E PEDE A QUANTIDADE DIRETO
   if (etapa === "codigo") {
     const digitos = texto.replace(/\D/g, "");
     if (!digitos) {
@@ -788,34 +858,24 @@ function processarRespostaVoz(texto) {
     }
 
     itemAtual = encontrado;
+    ocorrenciasLivroAtual = [];
     inicioSessaoLocalMs = Date.now();
     const codExibir = encontrado.codigo || encontrado.Codigo;
     const titExibir = encontrado.titulo || encontrado.Titulo;
-    const endExibir = encontrado.endereco || encontrado.Endereco || "Sem endereço";
+    const endExibir = String(encontrado.endereco || encontrado.Endereco || "").trim() || "Sem localização";
+    const endFaladoAssistente = formatarLocalizacaoParaFala(encontrado.endereco || encontrado.Endereco);
 
     document.getElementById("cardLivro").textContent = titExibir;
     document.getElementById("cardSAP").textContent = codExibir;
-    document.getElementById("cardEndereco").textContent = `${endExibir} / —`;
+    document.getElementById("cardEndereco").textContent = endExibir;
 
-    etapa = "endereco";
-    const aviso2a = pend2a ? "Atenção, segunda conferência. " : "";
-    falar(`${aviso2a}Livro ${titExibir}. Qual o endereço físico na prateleira?`, () => ouvirComando());
-    return;
-  }
-
-  if (etapa === "endereco") {
-    enderecoFalado = texto.trim();
-    const endPlanilha = String(itemAtual.endereco || itemAtual.Endereco || "").trim();
-    document.getElementById("cardEndereco").textContent = `${endPlanilha || "—"} / ${enderecoFalado}`;
-    houveDivergenciaEnd = normTexto(endPlanilha) !== normTexto(enderecoFalado);
     etapa = "quantidade";
-    const avisoEnd = houveDivergenciaEnd && endPlanilha
-      ? `Endereço divergente do sistema, que indica ${endPlanilha}. Registrarei a observação. `
-      : "";
-    falar(`${avisoEnd}Qual a quantidade contada?`, () => ouvirComando());
+    const aviso2a = pend2a ? "Segunda conferência. " : "";
+    falar(`${aviso2a}Livro ${titExibir}. Localização ${endFaladoAssistente}. Qual a quantidade contada?`, () => ouvirComando());
     return;
   }
 
+  // ETAPA 2: QUANTIDADE
   if (etapa === "quantidade") {
     const qtd = extrairNumeroFalado(texto);
     if (!Number.isInteger(qtd) || qtd < 0) {
@@ -828,6 +888,7 @@ function processarRespostaVoz(texto) {
     return;
   }
 
+  // ETAPA 3: CONFIRMAÇÃO
   if (etapa === "confirmacao") {
     if (cmd.includes("sim") || cmd.includes("confirmo") || cmd.includes("pode") || cmd.includes("correto") || cmd.includes("ok")) {
       enviarContagemPlanilha();
@@ -845,11 +906,12 @@ async function enviarContagemPlanilha() {
   const email = localStorage.getItem("senai_email");
   const codigo = itemAtual.codigo || itemAtual.Codigo;
   const titulo = itemAtual.titulo || itemAtual.Titulo;
-  const endPlanilha = itemAtual.endereco || itemAtual.Endereco || "";
+  const endPlanilha = String(itemAtual.endereco || itemAtual.Endereco || "").trim();
   const tempoSeg = inicioSessaoLocalMs ? Math.max(5, Math.round((Date.now() - inicioSessaoLocalMs) / 1000)) : 20;
-  const obs = houveDivergenciaEnd
-    ? `By Voice · Endereço divergente (Planilha: ${endPlanilha || "vazio"} | Falado: ${enderecoFalado})`
-    : `By Voice · Endereço confirmado: ${enderecoFalado}`;
+  const obsBase = `By Voice · Localização sistema: ${endPlanilha || "não cadastrada"}`;
+  const obs = ocorrenciasLivroAtual.length
+    ? `${obsBase} | NC aberta: ${ocorrenciasLivroAtual.join("; ")}`
+    : obsBase;
 
   setEstadoVisual("falando", "GRAVANDO NA PLANILHA...");
   document.getElementById("falaAssistente").textContent = "Gravando contagem na planilha...";
@@ -864,8 +926,8 @@ async function enviarContagemPlanilha() {
         codigo: codigo,
         titulo: titulo,
         quantidade: quantidadePendente,
-        enderecoFalado: enderecoFalado,
-        divergenciaEndereco: houveDivergenciaEnd,
+        enderecoFalado: endPlanilha,
+        divergenciaEndereco: false,
         observacao: obs,
         tempoSegundos: tempoSeg
       })
@@ -879,9 +941,8 @@ async function enviarContagemPlanilha() {
     await carregarAcervoRemoto(false);
     falar(`${json.mensagem || "Contagem registrada com sucesso."} Diga o próximo código SAP.`, () => {
       itemAtual = null;
-      enderecoFalado = "";
-      houveDivergenciaEnd = false;
       quantidadePendente = 0;
+      ocorrenciasLivroAtual = [];
       etapa = "codigo";
       document.getElementById("falaUsuario").textContent = "";
       ouvirComando();
