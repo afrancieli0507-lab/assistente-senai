@@ -22,6 +22,9 @@
     justify-content: space-between;
     align-items: center;
     box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    position: sticky;
+    top: 0;
+    z-index: 20;
   }
   .logo { font-weight: 900; font-size: 20px; letter-spacing: 1px; background: #fff; color: #e30613; padding: 4px 10px; border-radius: 5px; }
   .titulo-app { font-size: 14px; font-weight: 600; opacity: 0.95; }
@@ -32,33 +35,32 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    padding: 20px;
+    padding: 20px 16px 32px;
     text-align: center;
-    max-width: 540px;
+    max-width: 600px;
     margin: 0 auto;
     width: 100%;
   }
 
   .orbe-container {
     position: relative;
-    width: 130px;
-    height: 130px;
-    margin: 16px auto 24px;
+    width: 120px;
+    height: 120px;
+    margin: 10px auto 18px;
     display: flex;
     align-items: center;
     justify-content: center;
   }
   .orbe {
-    width: 96px;
-    height: 96px;
+    width: 90px;
+    height: 90px;
     border-radius: 50%;
     background: radial-gradient(circle at 30% 30%, #3b82f6, #1d4ed8);
     box-shadow: 0 0 30px rgba(59, 130, 246, 0.5);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 38px;
+    font-size: 36px;
     transition: all 0.3s ease;
     cursor: pointer;
     z-index: 2;
@@ -96,54 +98,161 @@
     border-radius: 20px;
     background: #1e293b;
     color: #94a3b8;
-    margin-bottom: 14px;
+    margin-bottom: 10px;
   }
   .status-badge.ouvindo { background: rgba(239, 68, 68, 0.2); color: #fca5a5; }
   .status-badge.falando { background: rgba(16, 185, 129, 0.2); color: #6ee7b7; }
   .status-badge.alerta2a { background: rgba(245, 158, 11, 0.25); color: #fcd34d; }
 
   .fala-assistente {
-    font-size: 20px;
+    font-size: 19px;
     font-weight: 600;
-    line-height: 1.45;
-    min-height: 60px;
-    margin-bottom: 12px;
+    line-height: 1.4;
+    min-height: 54px;
+    margin-bottom: 8px;
     color: #fff;
   }
   .fala-usuario {
-    font-size: 15px;
+    font-size: 14px;
     color: #94a3b8;
     font-style: italic;
-    min-height: 24px;
-    margin-bottom: 20px;
+    min-height: 22px;
+    margin-bottom: 14px;
   }
 
   .card-item {
     background: #1e293b;
     border: 1px solid #334155;
     border-radius: 14px;
-    padding: 16px;
+    padding: 14px 16px;
     width: 100%;
     text-align: left;
-    margin-bottom: 18px;
+    margin-bottom: 14px;
   }
   .card-item small { color: #94a3b8; font-size: 11px; text-transform: uppercase; display: block; }
-  .card-item strong { font-size: 16px; color: #f8fafc; display: block; margin-top: 2px; }
+  .card-item strong { font-size: 15px; color: #f8fafc; display: block; margin-top: 2px; }
   .card-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; padding-top: 10px; border-top: 1px solid #334155; }
 
-  .controles { display: flex; gap: 10px; width: 100%; }
+  .controles { display: flex; gap: 10px; width: 100%; margin-bottom: 22px; }
   .btn {
     flex: 1;
-    padding: 15px;
+    padding: 14px;
     border: 0;
     border-radius: 12px;
-    font-size: 16px;
+    font-size: 15px;
     font-weight: 700;
     cursor: pointer;
   }
   .btn-iniciar { background: #10b981; color: #064e3b; }
   .btn-parar { background: #ef4444; color: #fff; }
   .btn-repetir { background: #334155; color: #f8fafc; }
+
+  .secao-painel {
+    width: 100%;
+    text-align: left;
+    margin-top: 6px;
+  }
+  .secao-titulo {
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: #94a3b8;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .kpi-box {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 12px;
+    padding: 12px 10px;
+    text-align: center;
+  }
+  .kpi-box span { display: block; font-size: 11px; color: #94a3b8; text-transform: uppercase; }
+  .kpi-box strong { display: block; font-size: 20px; font-weight: 800; margin-top: 4px; color: #fff; }
+  .kpi-box.verde strong { color: #34d399; }
+  .kpi-box.amarelo strong { color: #fbbf24; }
+
+  .barra-progresso-wrap {
+    width: 100%;
+    height: 10px;
+    background: #1e293b;
+    border-radius: 999px;
+    overflow: hidden;
+    border: 1px solid #334155;
+    margin-bottom: 18px;
+  }
+  .barra-progresso-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #10b981, #34d399);
+    transition: width 0.5s ease;
+  }
+
+  .lista-tempos {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 18px;
+  }
+  .item-tempo {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 10px;
+    padding: 10px 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+  }
+  .item-tempo .nome-op { font-weight: 700; color: #f8fafc; }
+  .item-tempo .det-op { font-size: 11px; color: #94a3b8; display: block; }
+  .badge-tempo {
+    background: rgba(59, 130, 246, 0.2);
+    color: #93c5fd;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  .lista-contados {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 340px;
+    overflow-y: auto;
+  }
+  .item-contado {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 10px;
+    padding: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .item-contado h4 { font-size: 14px; color: #f8fafc; margin-bottom: 4px; line-height: 1.3; }
+  .item-contado p { font-size: 12px; color: #94a3b8; }
+  .badge-conf {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 8px;
+    border-radius: 6px;
+    white-space: nowrap;
+  }
+  .badge-1a { background: rgba(59, 130, 246, 0.2); color: #93c5fd; }
+  .badge-2a { background: rgba(16, 185, 129, 0.2); color: #6ee7b7; }
 
   .modal {
     position: fixed;
@@ -229,11 +338,48 @@
     <button id="btnParar" class="btn btn-parar" onclick="pararAssistente()" style="display:none">⏹ Parar</button>
     <button class="btn btn-repetir" onclick="repetirUltimaFala()">🔁 Repetir</button>
   </div>
+
+  <section class="secao-painel">
+    <div class="secao-titulo">
+      <span>📊 Progresso Geral do Inventário</span>
+      <span id="txtProgressoDetalhe">0 / 0 SKUs</span>
+    </div>
+    <div class="kpi-grid">
+      <div class="kpi-box">
+        <span>Total SKUs</span>
+        <strong id="kpiTotalSkus">0</strong>
+      </div>
+      <div class="kpi-box verde">
+        <span>% Concluída</span>
+        <strong id="kpiConcluido">0%</strong>
+      </div>
+      <div class="kpi-box amarelo">
+        <span>% Faltante</span>
+        <strong id="kpiFaltante">100%</strong>
+      </div>
+    </div>
+    <div class="barra-progresso-wrap">
+      <div id="barraProgressoFill" class="barra-progresso-fill"></div>
+    </div>
+
+    <div class="secao-titulo">
+      <span>⏱ Tempo de Conferência por Operador</span>
+    </div>
+    <div id="listaTempos" class="lista-tempos">
+      <div class="item-tempo" style="justify-content:center;color:#94a3b8">Nenhuma conferência registrada ainda.</div>
+    </div>
+
+    <div class="secao-titulo">
+      <span>📚 Livros Contados (<span id="qtdLivrosContados">0</span>)</span>
+    </div>
+    <div id="listaLivrosContados" class="lista-contados">
+      <div class="item-contado" style="justify-content:center;color:#94a3b8">Aguardando primeira contagem...</div>
+    </div>
+  </section>
 </main>
 
 <div id="logRodape" class="log-rodape">Aguardando identificação do operador...</div>
 
-<!-- Inicia oculto; só aparece se o aparelho ainda não souber qual e-mail cadastrado está usando -->
 <div id="modalConfig" class="modal oculto">
   <div class="modal-box">
     <h2>Identificação do Operador — SENAI</h2>
@@ -242,7 +388,6 @@
       <label>Seu E-mail Cadastrado *</label>
       <input id="cfgEmail" type="email" placeholder="Ex: aluno@sp.senai.br">
     </div>
-    <!-- URL oculta para todos os usuários -->
     <div class="campo" style="display:none">
       <label>URL do App da Web (/exec) *</label>
       <input id="cfgUrl">
@@ -256,6 +401,7 @@ const URL_APPS_SCRIPT_PADRAO = "https://script.google.com/macros/s/AKfycbzk9YiiI
 
 let acervoCache = [];
 let pendentes2aCache = {};
+let historicoCache = [];
 let operadorNome = "";
 let ativo = false;
 let etapa = "idle";
@@ -264,30 +410,25 @@ let itemAtual = null;
 let enderecoFalado = "";
 let houveDivergenciaEnd = false;
 let ultimaFalaTexto = "";
+let quantidadePendente = 0;
+let inicioSessaoLocalMs = null;
 
 window.addEventListener("DOMContentLoaded", () => {
   const params = new URLSearchParams(window.location.search);
   const emailParam = params.get("email");
   const urlParam = params.get("url");
 
-  // 1. Sempre grava a URL fixa (oculta) no navegador do usuário
   const urlFinal = (urlParam && urlParam.includes("/exec") ? urlParam.trim() : "") || localStorage.getItem("senai_url_exec") || URL_APPS_SCRIPT_PADRAO;
   localStorage.setItem("senai_url_exec", urlFinal);
   document.getElementById("cfgUrl").value = urlFinal;
 
-  // 2. Identifica qual usuário está acessando:
-  //    - Se veio pelo botão "By Voice" do sistema principal, já traz ?email=... automaticamente!
-  //    - Se abriu direto no celular, verifica se esse celular já tem o e-mail daquele operador salvo.
   const emailFinal = (emailParam ? emailParam.trim().toLowerCase() : "") || localStorage.getItem("senai_email") || "";
 
   if (emailFinal) {
     localStorage.setItem("senai_email", emailFinal);
     document.getElementById("cfgEmail").value = emailFinal;
-    // Pula a tela de login e valida o e-mail daquele usuário direto na planilha!
     carregarAcervoRemoto(true);
   } else {
-    // Primeiro acesso direto no celular sem vir pelo sistema principal:
-    // Pede APENAS o e-mail do usuário (sem mostrar URL) para saber quem é o operador.
     document.getElementById("modalConfig").classList.remove("oculto");
   }
 });
@@ -334,323 +475,7 @@ async function carregarAcervoRemoto(fecharModalSeOk) {
     if (json.ok && Array.isArray(json.acervo)) {
       acervoCache = json.acervo;
       pendentes2aCache = json.pendentes2a || {};
+      historicoCache = Array.isArray(json.historico) ? json.historico : [];
       operadorNome = json.operador || email;
       const qtdPend = Object.keys(pendentes2aCache).length;
-      rodape.textContent = `✅ ${operadorNome} (${email}) · ${acervoCache.length} livros · ${qtdPend} pendentes 2ª conf.`;
-      setEstadoUI("", "PRONTO PARA INICIAR", null);
-      if (fecharModalSeOk) document.getElementById("modalConfig").classList.add("oculto");
-    } else {
-      // Se o e-mail não estiver cadastrado na aba Usuarios, limpa e abre o campo de e-mail
-      localStorage.removeItem("senai_email");
-      rodape.textContent = "❌ " + (json.erro || "E-mail não cadastrado na planilha.");
-      document.getElementById("modalConfig").classList.remove("oculto");
-      alert(json.erro || "Este e-mail não está cadastrado na aba Usuarios da planilha.");
-    }
-  } catch (e) {
-    rodape.textContent = "❌ Falha de conexão: " + e.message;
-    document.getElementById("modalConfig").classList.remove("oculto");
-  }
-}
-
-function setEstadoUI(modo, badge, fala) {
-  const orbe = document.getElementById("orbe");
-  const st = document.getElementById("statusBadge");
-  orbe.className = "orbe " + modo;
-  st.className = "status-badge " + modo;
-  st.textContent = badge;
-  if (fala) {
-    ultimaFalaTexto = fala;
-    document.getElementById("falaAssistente").textContent = fala;
-  }
-}
-
-function falar(texto, callbackFim, classeBadge) {
-  setEstadoUI(classeBadge || "falando", classeBadge === "alerta2a" ? "SEGUNDA CONFERÊNCIA" : "ASSISTENTE FALANDO", texto);
-  if (!("speechSynthesis" in window)) {
-    if (callbackFim) callbackFim();
-    return;
-  }
-  window.speechSynthesis.cancel();
-  const u = new SpeechSynthesisUtterance(texto);
-  u.lang = "pt-BR";
-  u.rate = 1.08;
-  u.onend = () => { if (callbackFim) callbackFim(); };
-  u.onerror = () => { if (callbackFim) callbackFim(); };
-  window.speechSynthesis.speak(u);
-}
-
-function escutar(onResultado) {
-  if (!ativo) return;
-  const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SpeechRec) {
-    alert("Use o navegador Google Chrome no celular.");
-    return;
-  }
-  if (reconhecimento) { try { reconhecimento.abort(); } catch (e) {} }
-
-  const rec = new SpeechRec();
-  rec.lang = "pt-BR";
-  rec.interimResults = false;
-  rec.maxAlternatives = 1;
-  reconhecimento = rec;
-
-  setEstadoUI("ouvindo", "OUVINDO VOCÊ...", null);
-  document.getElementById("falaUsuario").textContent = "Pode falar...";
-
-  rec.onresult = (ev) => {
-    const txt = ev.results[0][0].transcript.trim();
-    document.getElementById("falaUsuario").textContent = `Você disse: "${txt}"`;
-    processarComandoVoz(txt, onResultado);
-  };
-
-  rec.onerror = (ev) => {
-    if (ev.error === "aborted" || !ativo) return;
-    falar("Não entendi. Pode repetir?", () => escutar(onResultado));
-  };
-
-  rec.start();
-}
-
-function alternarAssistente() {
-  if (ativo) pararAssistente();
-  else iniciarAssistente();
-}
-
-function iniciarAssistente() {
-  if (!operadorNome) {
-    abrirConfig();
-    return;
-  }
-  ativo = true;
-  document.getElementById("btnIniciar").style.display = "none";
-  document.getElementById("btnParar").style.display = "block";
-  pedirSAPEPosicao(`Olá ${operadorNome}! Qual o código SAP, a coluna e o nível?`);
-}
-
-function pararAssistente() {
-  ativo = false;
-  etapa = "idle";
-  if (reconhecimento) { try { reconhecimento.abort(); } catch (e) {} }
-  if ("speechSynthesis" in window) window.speechSynthesis.cancel();
-  document.getElementById("btnIniciar").style.display = "block";
-  document.getElementById("btnParar").style.display = "none";
-  setEstadoUI("", "ASSISTENTE PAUSADO", "Toque em Iniciar Assistente para continuar.");
-}
-
-function repetirUltimaFala() {
-  if (ultimaFalaTexto) {
-    falar(ultimaFalaTexto, () => {
-      if (ativo && etapa === "sap_local") escutar(tratarSAPEPosicao);
-      if (ativo && etapa === "quantidade") escutar(tratarQuantidade);
-    });
-  }
-}
-
-function processarComandoVoz(texto, callbackEtapa) {
-  const low = texto.toLowerCase();
-  if (low === "parar" || low === "encerrar" || low === "sair") {
-    falar("Encerrando assistente. Bom trabalho!");
-    pararAssistente();
-    return;
-  }
-  if (low === "repetir" || low === "não entendi") {
-    repetirUltimaFala();
-    return;
-  }
-  if (low === "cancelar" || low === "voltar") {
-    pedirSAPEPosicao("Ok, cancelado. Informe o próximo código SAP, coluna e nível.");
-    return;
-  }
-  callbackEtapa(texto);
-}
-
-function pedirSAPEPosicao(mensagemFala) {
-  etapa = "sap_local";
-  falar(mensagemFala, () => escutar(tratarSAPEPosicao));
-}
-
-function normalizarDigitos(frase) {
-  const limpo = frase.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-  const mapa = { "zero": "0", "um": "1", "uma": "1", "dois": "2", "duas": "2", "tres": "3", "quatro": "4", "cinco": "5", "seis": "6", "meia": "6", "sete": "7", "oito": "8", "nove": "9" };
-  let out = [], buf = "";
-  limpo.split(/\s+/).forEach(t => {
-    const p = t.replace(/[^a-z0-9]/g, "");
-    if (mapa[p] !== undefined) buf += mapa[p];
-    else if (/^\d+$/.test(p)) buf += p;
-    else { if (buf) { out.push(buf); buf = ""; } out.push(t); }
-  });
-  if (buf) out.push(buf);
-  return out.join(" ");
-}
-
-function limparCodigoSAP(valor) {
-  return String(valor || "").replace(/[^0-9a-zA-Z]/g, "").replace(/^0+/, "");
-}
-
-function normComp(v) {
-  return String(v || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "");
-}
-
-function tratarSAPEPosicao(falado) {
-  const norm = normalizarDigitos(falado);
-
-  const parteAntesEndereco = norm.split(/\b(coluna|nivel|nível|prateleira|estante)\b/i)[0];
-  const todosDigitosSAP = (parteAntesEndereco.match(/\d+/g) || []).join("");
-  const sap = todosDigitosSAP.length >= 3 ? todosDigitosSAP : "";
-
-  const mCol = norm.match(/coluna\s*(\d+)/i);
-  const mNiv = norm.match(/n[ií]vel\s*(\d+)/i);
-  enderecoFalado = (mCol || mNiv) ? `C${mCol ? mCol[1] : "?"}N${mNiv ? mNiv[1] : "?"}` : falado;
-
-  if (!sap) {
-    pedirSAPEPosicao("Não captei o código SAP. Diga novamente o SAP, coluna e nível.");
-    return;
-  }
-
-  const sapLimpo = limparCodigoSAP(sap);
-  const livro = acervoCache.find(l => limparCodigoSAP(l.Codigo) === sapLimpo);
-
-  if (!livro) {
-    document.getElementById("cardSAP").textContent = sap;
-    document.getElementById("cardLivro").textContent = "Não encontrado (" + acervoCache.length + " na base)";
-    document.getElementById("cardEndereco").textContent = enderecoFalado;
-    pedirSAPEPosicao(`O código SAP ${sap} não está no cadastro. Diga outro código.`);
-    return;
-  }
-
-  const pend2a = pendentes2aCache[sapLimpo];
-  if (pend2a) {
-    const emailAtual = (localStorage.getItem("senai_email") || "").split("@")[0];
-    if (
-      normComp(pend2a.primeiroOperador) === normComp(operadorNome) ||
-      normComp(pend2a.primeiroOperador).includes(normComp(emailAtual))
-    ) {
-      document.getElementById("cardSAP").textContent = livro.Codigo;
-      document.getElementById("cardLivro").textContent = "⛔ Bloqueado (Sua 1ª contagem)";
-      document.getElementById("cardEndereco").textContent = livro.Endereco || enderecoFalado;
-      pedirSAPEPosicao(`Atenção ${operadorNome}: você realizou a primeira contagem deste livro. Outro operador deve realizar a dupla conferência. Informe outro código SAP.`);
-      return;
-    }
-
-    itemAtual = livro;
-    houveDivergenciaEnd = false;
-    document.getElementById("cardSAP").textContent = livro.Codigo;
-    document.getElementById("cardLivro").textContent = "🔁 2ª Conf.: " + livro.Titulo;
-    document.getElementById("cardEndereco").textContent = `${livro.Endereco || "Sem end."} / ${enderecoFalado}`;
-
-    etapa = "quantidade";
-    falar(`Atenção: essa é a segunda conferência do livro ${livro.Titulo}. Quantas unidades você contou?`, () => escutar(tratarQuantidade), "alerta2a");
-    return;
-  }
-
-  itemAtual = livro;
-  document.getElementById("cardSAP").textContent = livro.Codigo;
-  document.getElementById("cardLivro").textContent = livro.Titulo;
-  document.getElementById("cardEndereco").textContent = `${livro.Endereco || "Sem end."} / ${enderecoFalado}`;
-
-  const endSis = String(livro.Endereco || "").toLowerCase().replace(/[^a-z0-9]/g, "");
-  const bate = (!mCol || endSis.includes(mCol[1])) && (!mNiv || endSis.includes(mNiv[1]));
-  houveDivergenciaEnd = Boolean(livro.Endereco && !bate);
-
-  if (houveDivergenciaEnd) {
-    etapa = "divergencia";
-    falar(`Atenção: este livro está cadastrado em ${livro.Endereco}, mas você falou ${enderecoFalado}. Diga ocorrência para avisar Amanda, ou diga continuar para contar.`, () => {
-      escutar((resp) => {
-        const r = resp.toLowerCase();
-        if (r.includes("ocorr") || r.includes("amanda")) {
-          enviarOcorrenciaRemota(livro.Codigo, livro.Titulo, `Cadastrado em ${livro.Endereco}, encontrado em ${enderecoFalado}`);
-        } else {
-          pedirQuantidade(`Ok, prosseguindo. Quantas unidades de ${livro.Titulo} você contou?`);
-        }
-      });
-    });
-    return;
-  }
-
-  pedirQuantidade(`Livro ${livro.Titulo} confirmado. Quantas unidades você contou?`);
-}
-
-function pedirQuantidade(mensagemFala) {
-  etapa = "quantidade";
-  falar(mensagemFala, () => escutar(tratarQuantidade));
-}
-
-function extrairQtd(frase) {
-  const norm = normalizarDigitos(frase);
-  const m = norm.match(/\d+/);
-  if (m) return parseInt(m[0], 10);
-  const dez = { "dez": 10, "onze": 11, "doze": 12, "treze": 13, "quatorze": 14, "catorze": 14, "quinze": 15, "dezesseis": 16, "dezessete": 17, "dezoito": 18, "dezenove": 19, "vinte": 20, "trinta": 30, "quarenta": 40, "cinquenta": 50, "sessenta": 60, "setenta": 70, "oitenta": 80, "noventa": 90, "cem": 100 };
-  const uni = { "zero": 0, "um": 1, "uma": 1, "dois": 2, "duas": 2, "tres": 3, "quatro": 4, "cinco": 5, "seis": 6, "sete": 7, "oito": 8, "nove": 9 };
-  let soma = 0, ok = false;
-  frase.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").split(/\s+/).forEach(p => {
-    if (dez[p] !== undefined) { soma += dez[p]; ok = true; }
-    if (uni[p] !== undefined) { soma += uni[p]; ok = true; }
-  });
-  return ok ? soma : NaN;
-}
-
-async function tratarQuantidade(falado) {
-  const qtd = extrairQtd(falado);
-  if (isNaN(qtd) || qtd < 0) {
-    pedirQuantidade("Não entendi o número. Fale apenas a quantidade contada.");
-    return;
-  }
-
-  setEstadoUI("falando", "SALVANDO NA PLANILHA...", `Registrando ${qtd} unidades de ${itemAtual.Titulo}...`);
-
-  const url = localStorage.getItem("senai_url_exec") || URL_APPS_SCRIPT_PADRAO;
-  const email = localStorage.getItem("senai_email");
-
-  try {
-    const resp = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify({
-        acao: "registrar",
-        email: email,
-        Codigo: itemAtual.Codigo,
-        PrimeiraContagem: qtd,
-        EnderecoInformado: enderecoFalado,
-        DivergenciaEndereco: houveDivergenciaEnd,
-        Observacao: `Assistente de Voz (${operadorNome})`
-      })
-    });
-    const json = await resp.json();
-    if (json.ok) {
-      await carregarAcervoRemoto(false);
-      const msgVoz = json.segundaConferencia
-        ? `Segunda conferência registrada com ${qtd} unidades! Próximo livro: informe o código SAP, coluna e nível.`
-        : `${qtd} unidades registradas! Próximo livro: informe o código SAP, coluna e nível.`;
-      pedirSAPEPosicao(msgVoz);
-    } else if (json.bloqueioDuplaConferencia) {
-      pedirSAPEPosicao(json.erro + " Informe outro código SAP.");
-    } else {
-      falar("Erro ao salvar na planilha: " + (json.erro || "tente novamente."), () => pedirQuantidade("Repita a quantidade."));
-    }
-  } catch (e) {
-    falar("Falha de conexão com a planilha. Verifique a internet e repita a quantidade.", () => pedirQuantidade("Repita a quantidade."));
-  }
-}
-
-async function enviarOcorrenciaRemota(sap, titulo, desc) {
-  const url = localStorage.getItem("senai_url_exec") || URL_APPS_SCRIPT_PADRAO;
-  const email = localStorage.getItem("senai_email");
-  try {
-    await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify({
-        acao: "ocorrencia",
-        email: email,
-        Codigo: sap,
-        Titulo: titulo,
-        Endereco: enderecoFalado,
-        Descricao: desc
-      })
-    });
-  } catch (e) {}
-  pedirQuantidade(`Ocorrência registrada para Amanda. Agora informe quantas unidades de ${titulo} você contou neste local.`);
-}
-</script>
-</body>
-</html>
+      rodape.textContent = `✅ ${
