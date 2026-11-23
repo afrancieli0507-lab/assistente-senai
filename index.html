@@ -292,6 +292,25 @@
     border-top: 1px solid #1e293b;
     background: #0b1120;
   }
+
+  /* Border Spinner no estilo Bootstrap, sem bibliotecas externas */
+  .carregamento-overlay {
+    position: fixed; inset: 0; z-index: 1000;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 16px; padding: 24px; background: rgba(15, 23, 42, .91);
+    color: #fff; text-align: center;
+  }
+  .carregamento-overlay[hidden] { display: none !important; }
+  .spinner-border {
+    display: inline-block; width: 3.5rem; height: 3.5rem;
+    border: .35em solid currentColor; border-right-color: transparent;
+    border-radius: 50%; animation: spinner-border .75s linear infinite;
+    color: #e30613;
+  }
+  @keyframes spinner-border { to { transform: rotate(360deg); } }
+  .carregamento-titulo { font-size: 20px; font-weight: 750; }
+  .carregamento-detalhe { color: #cbd5e1; font-size: 14px; max-width: 360px; line-height: 1.5; }
+  @media (prefers-reduced-motion: reduce) { .spinner-border { animation-duration: 1.8s; } }
 </style>
 </head>
 <body>
@@ -371,6 +390,11 @@
   </section>
 </main>
 <div id="logRodape" class="log-rodape">Aguardando identificação do operador...</div>
+<div id="carregamentoOverlay" class="carregamento-overlay" role="status" aria-live="polite" aria-label="Carregando informações" hidden>
+  <span class="spinner-border" aria-hidden="true"></span>
+  <div id="carregamentoTitulo" class="carregamento-titulo">Carregando informações...</div>
+  <div id="carregamentoDetalhe" class="carregamento-detalhe">Consultando a planilha do acervo.</div>
+</div>
 <div id="modalConfig" class="modal oculto">
   <div class="modal-box">
     <h2>Configuração do Operador — SENAI</h2>
@@ -403,6 +427,23 @@ let inicioSessaoLocalMs = null;
 let ocorrenciasLivroAtual = [];
 let escutaSequencia = 0;
 let falaSequencia = 0;
+
+
+// Bloqueia apenas durante chamadas remotas: não cobre o momento de ouvir ou falar.
+let carregamentosAtivos = 0;
+function mostrarCarregamento(titulo, detalhe) {
+  carregamentosAtivos++;
+  const overlay = document.getElementById("carregamentoOverlay");
+  if (!overlay) return;
+  document.getElementById("carregamentoTitulo").textContent = titulo || "Carregando informações...";
+  document.getElementById("carregamentoDetalhe").textContent = detalhe || "Consultando a planilha do acervo.";
+  overlay.hidden = false;
+}
+function ocultarCarregamento() {
+  carregamentosAtivos = Math.max(0, carregamentosAtivos - 1);
+  const overlay = document.getElementById("carregamentoOverlay");
+  if (overlay && carregamentosAtivos === 0) overlay.hidden = true;
+}
 
 function esc(v) {
   return String(v ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -453,6 +494,8 @@ async function salvarConfig() {
 }
 
 async function carregarAcervoRemoto(fecharModalSeOk) {
+  mostrarCarregamento("Carregando informações...", "Consultando os livros, as pendências e o histórico de inventário.");
+  try {
   const url = localStorage.getItem("senai_url_exec") || URL_APPS_SCRIPT_PADRAO;
   const email = localStorage.getItem("senai_email");
   const rodape = document.getElementById("logRodape");
@@ -481,6 +524,9 @@ async function carregarAcervoRemoto(fecharModalSeOk) {
     }
   } catch (err) {
     rodape.textContent = `❌ Falha de conexão com a planilha: ${err.message || err}`;
+  }
+  } finally {
+    ocultarCarregamento();
   }
 }
 
@@ -827,6 +873,8 @@ function perguntaDaEtapaAtual() {
 }
 
 async function registrarOcorrenciaVoz(textoOriginal, cmdNormalizado) {
+  mostrarCarregamento("Registrando ocorrência...", "Enviando a não conformidade para a planilha.");
+  try {
   const url = localStorage.getItem("senai_url_exec") || URL_APPS_SCRIPT_PADRAO;
   const email = localStorage.getItem("senai_email");
   const isAvaria = cmdNormalizado.includes("avaria");
@@ -860,6 +908,9 @@ async function registrarOcorrenciaVoz(textoOriginal, cmdNormalizado) {
     falar(aviso + perguntaDaEtapaAtual(), () => ouvirComando());
   } catch (e) {
     falar(`Não conformidade anotada. ` + perguntaDaEtapaAtual(), () => ouvirComando());
+  }
+  } finally {
+    ocultarCarregamento();
   }
 }
 
@@ -951,6 +1002,8 @@ function processarRespostaVoz(texto) {
 }
 
 async function enviarContagemPlanilha() {
+  mostrarCarregamento("Salvando contagem...", "Registrando a quantidade na planilha de inventário.");
+  try {
   const url = localStorage.getItem("senai_url_exec") || URL_APPS_SCRIPT_PADRAO;
   const email = localStorage.getItem("senai_email");
   const codigo = itemAtual.codigo || itemAtual.Codigo;
@@ -998,6 +1051,9 @@ async function enviarContagemPlanilha() {
     });
   } catch (err) {
     falar("Erro de conexão ao salvar. Diga sim para tentar enviar novamente ou cancelar.", () => ouvirComando());
+  }
+  } finally {
+    ocultarCarregamento();
   }
 }
 </script>
