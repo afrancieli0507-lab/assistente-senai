@@ -874,6 +874,7 @@ function perguntaDaEtapaAtual() {
 
 async function registrarOcorrenciaVoz(textoOriginal, cmdNormalizado) {
   mostrarCarregamento("Registrando ocorrência...", "Enviando a não conformidade para a planilha.");
+  let mensagemAoFinal = "";
   try {
   const url = localStorage.getItem("senai_url_exec") || URL_APPS_SCRIPT_PADRAO;
   const email = localStorage.getItem("senai_email");
@@ -905,13 +906,14 @@ async function registrarOcorrenciaVoz(textoOriginal, cmdNormalizado) {
     const aviso = json.ok
       ? `Não conformidade de ${tipoNC.toLowerCase()} aberta com sucesso. `
       : `Atenção: não consegui gravar a não conformidade agora, mas anotei na observação. `;
-    falar(aviso + perguntaDaEtapaAtual(), () => ouvirComando());
+    mensagemAoFinal = aviso + perguntaDaEtapaAtual();
   } catch (e) {
-    falar(`Não conformidade anotada. ` + perguntaDaEtapaAtual(), () => ouvirComando());
+    mensagemAoFinal = `Não conformidade anotada. ` + perguntaDaEtapaAtual();
   }
   } finally {
     ocultarCarregamento();
   }
+  if (ativo && mensagemAoFinal) falar(mensagemAoFinal, () => ouvirComando());
 }
 
 function processarRespostaVoz(texto) {
@@ -1002,46 +1004,58 @@ function processarRespostaVoz(texto) {
 }
 
 async function enviarContagemPlanilha() {
-  mostrarCarregamento("Salvando contagem...", "Registrando a quantidade na planilha de inventário.");
+  if (!itemAtual) return;
+  // Mantém o aviso visível até o servidor responder e a tabela ser atualizada.
+  mostrarCarregamento("Salvando contagem...", "Aguarde. Registrando a quantidade no inventário.");
+  setEstadoVisual("", "SALVANDO NA PLANILHA...");
+  document.getElementById("falaAssistente").textContent = "Registrando sua contagem no inventário...";
+  // Nenhuma resposta falada enquanto a requisição estiver em andamento.
+  let mensagemAoFinal = "";
+  let salvou = false;
   try {
-  const url = localStorage.getItem("senai_url_exec") || URL_APPS_SCRIPT_PADRAO;
-  const email = localStorage.getItem("senai_email");
-  const codigo = itemAtual.codigo || itemAtual.Codigo;
-  const titulo = itemAtual.titulo || itemAtual.Titulo;
-  const endPlanilha = String(itemAtual.endereco || itemAtual.Endereco || "").trim();
-  const tempoSeg = inicioSessaoLocalMs ? Math.max(5, Math.round((Date.now() - inicioSessaoLocalMs) / 1000)) : 20;
-  const obsBase = `By Voice · Localização sistema: ${endPlanilha || "não cadastrada"}`;
-  const obs = ocorrenciasLivroAtual.length
-    ? `${obsBase} | NC aberta: ${ocorrenciasLivroAtual.join("; ")}`
-    : obsBase;
-
-  setEstadoVisual("falando", "GRAVANDO NA PLANILHA...");
-  document.getElementById("falaAssistente").textContent = "Gravando contagem na planilha...";
-
-  try {
+    const url = localStorage.getItem("senai_url_exec") || URL_APPS_SCRIPT_PADRAO;
+    const email = localStorage.getItem("senai_email");
+    const codigo = itemAtual.codigo || itemAtual.Codigo;
+    const titulo = itemAtual.titulo || itemAtual.Titulo;
+    const endPlanilha = String(itemAtual.endereco || itemAtual.Endereco || "").trim();
+    const tempoSeg = inicioSessaoLocalMs ? Math.max(5, Math.round((Date.now() - inicioSessaoLocalMs) / 1000)) : 20;
+    const obsBase = `By Voice · Localização sistema: ${endPlanilha || "não cadastrada"}`;
+    const obs = ocorrenciasLivroAtual.length
+      ? `${obsBase} | NC aberta: ${ocorrenciasLivroAtual.join("; ")}` : obsBase;
     const resp = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "text/plain;charset=utf-8" },
       body: JSON.stringify({
-        acao: "registrar_contagem",
-        email: email,
-        codigo: codigo,
-        titulo: titulo,
-        quantidade: quantidadePendente,
-        enderecoFalado: endPlanilha,
-        divergenciaEndereco: false,
-        observacao: obs,
-        tempoSegundos: tempoSeg
+        acao: "registrar_contagem", email, codigo, titulo,
+        quantidade: quantidadePendente, enderecoFalado: endPlanilha,
+        divergenciaEndereco: false, observacao: obs, tempoSegundos: tempoSeg
       })
     });
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     const json = await resp.json();
     if (!json.ok) {
-      falar(`Não foi possível gravar: ${json.mensagem || "erro na planilha"}. Diga o próximo código SAP.`, () => ouvirComando());
-      return;
+      mensagemAoFinal = `Não foi possível gravar: ${json.mensagem || "erro na planilha"}.`;
+    } else {
+      salvou = true;
+      // Recarrega a lista de livros contados antes de encerrar o spinner.
+      document.getElementById("carregamentoTitulo").textContent = "Atualizando inventário...";
+      document.getElementById("carregamentoDetalhe").textContent = "Conferindo as informações registradas na planilha.";
+      await carregarAcervoRemoto(false);
+      mensagemAoFinal = `${json.mensagem || "Contagem registrada com sucesso."} Diga o próximo código SAP.`;
     }
-
-    await carregarAcervoRemoto(false);
-    falar(`${json.mensagem || "Contagem registrada com sucesso."} Diga o próximo código SAP.`, () => {
+  } catch (err) {
+    // Não pede novo envio automático: evita contagens duplicadas se o servidor salvou e a conexão caiu.
+    mensagemAoFinal = salvou
+      ? "A contagem foi registrada, mas não consegui atualizar a lista. Confira o histórico antes de continuar."
+      : "Não consegui confirmar o salvamento. Verifique a planilha antes de repetir esta contagem.";
+    document.getElementById("logRodape").textContent = `Falha na operação: ${err.message || err}`;
+  } finally {
+    ocultarCarregamento();
+  }
+  // Primeiro fecha o indicador, depois volta a falar e ouvir.
+  if (!ativo) return;
+  if (salvou) {
+    falar(mensagemAoFinal, () => {
       itemAtual = null;
       quantidadePendente = 0;
       ocorrenciasLivroAtual = [];
@@ -1049,13 +1063,11 @@ async function enviarContagemPlanilha() {
       document.getElementById("falaUsuario").textContent = "";
       ouvirComando();
     });
-  } catch (err) {
-    falar("Erro de conexão ao salvar. Diga sim para tentar enviar novamente ou cancelar.", () => ouvirComando());
-  }
-  } finally {
-    ocultarCarregamento();
+  } else {
+    falar(mensagemAoFinal + " Diga sim para tentar novamente ou cancelar.", () => ouvirComando());
   }
 }
+
 </script>
 </body>
 </html>
