@@ -300,7 +300,7 @@
     <span class="logo">SENAI</span>
     <span class="titulo-app">Assistente de Inventário</span>
   </div>
-  <button class="btn-config" onclick="abrirConfig()">⚙ Trocar Operador / Voz</button>
+  <button class="btn-config" onclick="abrirConfig()">⚙ Trocar Operador</button>
 </header>
 <main>
   <div id="statusBadge" class="status-badge">PRONTO PARA INICIAR</div>
@@ -373,20 +373,11 @@
 <div id="logRodape" class="log-rodape">Aguardando identificação do operador...</div>
 <div id="modalConfig" class="modal oculto">
   <div class="modal-box">
-    <h2>Configuração do Operador e Voz — SENAI</h2>
-    <p style="font-size:13px;color:#94a3b8;margin-bottom:14px">Digite seu e-mail cadastrado na planilha e escolha a voz do assistente.</p>
+    <h2>Configuração do Operador — SENAI</h2>
+    <p style="font-size:13px;color:#94a3b8;margin-bottom:14px">Digite seu e-mail cadastrado na planilha para acessar o inventário.</p>
     <div class="campo">
       <label>Seu E-mail Cadastrado *</label>
       <input id="cfgEmail" type="email" placeholder="Ex: aluno@sp.senai.br">
-    </div>
-    <div class="campo">
-      <label>Voz do Assistente</label>
-      <div style="display:flex;gap:8px">
-        <select id="cfgVoz" style="flex:1;font-size:14px">
-          <option value="">Padrão do aparelho</option>
-        </select>
-        <button type="button" onclick="testarVozSelecionada()" style="padding:0 14px;border-radius:8px;border:0;background:#3b82f6;color:#fff;font-weight:700;cursor:pointer;white-space:nowrap">🔊 Testar</button>
-      </div>
     </div>
     <div class="campo" style="display:none">
       <label>URL do App da Web (/exec) *</label>
@@ -410,7 +401,8 @@ let ultimaFalaTexto = "";
 let quantidadePendente = 0;
 let inicioSessaoLocalMs = null;
 let ocorrenciasLivroAtual = [];
-let vozesDisponiveis = [];
+let escutaSequencia = 0;
+let falaSequencia = 0;
 
 function esc(v) {
   return String(v ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -420,43 +412,8 @@ function normCodigo(v) {
   return String(v ?? "").trim().replace(/^0+/, "");
 }
 
-function carregarVozes() {
-  if (!("speechSynthesis" in window)) return;
-  const todas = window.speechSynthesis.getVoices();
-  vozesDisponiveis = todas.filter(v => v.lang.toLowerCase().startsWith("pt"));
-  const select = document.getElementById("cfgVoz");
-  if (!select) return;
-  const vozSalva = localStorage.getItem("senai_voz_nome") || "";
-  select.innerHTML = `<option value="">Padrão do aparelho</option>` +
-    vozesDisponiveis.map(v =>
-      `<option value="${esc(v.name)}" ${v.name === vozSalva ? "selected" : ""}>${esc(v.name)} (${esc(v.lang)})</option>`
-    ).join("");
-}
-
-if ("speechSynthesis" in window) {
-  window.speechSynthesis.onvoiceschanged = carregarVozes;
-}
-
-function testarVozSelecionada() {
-  if (!("speechSynthesis" in window)) {
-    alert("Seu navegador não suporta síntese de voz.");
-    return;
-  }
-  const select = document.getElementById("cfgVoz");
-  const nomeVoz = select ? select.value : "";
-  window.speechSynthesis.cancel();
-  const utter = new SpeechSynthesisUtterance("Olá! Esta é a voz selecionada para o inventário do SENAI.");
-  utter.lang = "pt-BR";
-  utter.rate = 1.05;
-  if (nomeVoz) {
-    const objVoz = vozesDisponiveis.find(v => v.name === nomeVoz);
-    if (objVoz) utter.voice = objVoz;
-  }
-  window.speechSynthesis.speak(utter);
-}
-
 window.addEventListener("DOMContentLoaded", () => {
-  carregarVozes();
+  localStorage.removeItem("senai_voz_nome"); // Desativa a preferência antiga de voz.
   const params = new URLSearchParams(window.location.search);
   const emailParam = params.get("email");
   const urlParam = params.get("url");
@@ -475,21 +432,18 @@ window.addEventListener("DOMContentLoaded", () => {
 
 function abrirConfig() {
   pararAssistente();
-  carregarVozes();
   document.getElementById("modalConfig").classList.remove("oculto");
 }
 
 async function salvarConfig() {
   const url = document.getElementById("cfgUrl").value.trim() || URL_APPS_SCRIPT_PADRAO;
   const email = document.getElementById("cfgEmail").value.trim().toLowerCase();
-  const vozEscolhida = document.getElementById("cfgVoz") ? document.getElementById("cfgVoz").value : "";
   if (!email.includes("@")) {
     alert("Informe seu e-mail válido cadastrado na planilha.");
     return;
   }
   localStorage.setItem("senai_url_exec", url);
   localStorage.setItem("senai_email", email);
-  localStorage.setItem("senai_voz_nome", vozEscolhida);
   const btn = document.getElementById("btnSalvarCfg");
   btn.textContent = "Validando na planilha...";
   btn.disabled = true;
@@ -605,34 +559,34 @@ function setEstadoVisual(estado, textoBadge) {
 function falar(texto, callbackPosFala) {
   ultimaFalaTexto = texto;
   document.getElementById("falaAssistente").textContent = texto;
-  if (!("speechSynthesis" in window)) {
-    if (callbackPosFala) callbackPosFala();
+  const seq = ++falaSequencia;
+  // Invalida a escuta anterior antes de interrompê-la: evita reinícios concorrentes.
+  ++escutaSequencia;
+  if (reconhecimento) {
+    try { reconhecimento.abort(); } catch (e) {}
+    reconhecimento = null;
+  }
+  if (!( "speechSynthesis" in window)) {
+    if (ativo && callbackPosFala) callbackPosFala();
     return;
   }
   window.speechSynthesis.cancel();
-  if (reconhecimento) {
-    try { reconhecimento.abort(); } catch (e) {}
-  }
   setEstadoVisual("falando", "ASSISTENTE FALANDO...");
   const utter = new SpeechSynthesisUtterance(texto);
   utter.lang = "pt-BR";
-  utter.rate = 1.05;
-  const vozSalva = localStorage.getItem("senai_voz_nome");
-  if (vozSalva && vozesDisponiveis.length) {
-    const objVoz = vozesDisponiveis.find(v => v.name === vozSalva);
-    if (objVoz) utter.voice = objVoz;
-  }
-  utter.onend = () => {
-    if (ativo && callbackPosFala) {
-      callbackPosFala();
-    } else if (!ativo) {
-      setEstadoVisual("", "PAUSADO");
-    }
-  };
-  utter.onerror = () => {
+  utter.rate = 1.0;
+  // Usa a voz padrão em português, sem seleção ou dependência de vozes carregadas.
+  let finalizada = false;
+  const terminar = () => {
+    if (finalizada || seq !== falaSequencia) return;
+    finalizada = true;
     if (ativo && callbackPosFala) callbackPosFala();
+    else if (!ativo) setEstadoVisual("", "PAUSADO");
   };
-  window.speechSynthesis.speak(utter);
+  utter.onend = terminar;
+  utter.onerror = terminar;
+  try { window.speechSynthesis.speak(utter); }
+  catch (e) { terminar(); }
 }
 
 function repetirUltimaFala() {
@@ -673,6 +627,8 @@ async function iniciarAssistente() {
 
 function pararAssistente() {
   ativo = false;
+  ++falaSequencia;
+  ++escutaSequencia;
   etapa = "idle";
   if ("speechSynthesis" in window) window.speechSynthesis.cancel();
   if (reconhecimento) {
@@ -695,40 +651,79 @@ function pedirProximoCodigo() {
 function ouvirComando() {
   if (!ativo) return;
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  reconhecimento = new SpeechRecognition();
-  reconhecimento.lang = "pt-BR";
-  reconhecimento.interimResults = false;
-  reconhecimento.maxAlternatives = 1;
+  if (!SpeechRecognition) {
+    setEstadoVisual("", "RECONHECIMENTO INDISPONÍVEL");
+    return;
+  }
+  // Só uma instância de escuta pode estar ativa de cada vez.
+  const seq = ++escutaSequencia;
+  if (reconhecimento) {
+    try { reconhecimento.abort(); } catch (e) {}
+  }
+  const atual = new SpeechRecognition();
+  reconhecimento = atual;
+  atual.lang = "pt-BR";
+  atual.continuous = false;
+  atual.interimResults = false;
+  atual.maxAlternatives = 1;
+  let recebeuResultado = false;
+  let erroFatal = false;
+  let houveInicio = false;
 
-  reconhecimento.onstart = () => {
+  atual.onstart = () => {
+    if (!ativo || seq !== escutaSequencia) return;
+    houveInicio = true;
     setEstadoVisual("ouvindo", "OUVINDO VOCÊ...");
   };
 
-  reconhecimento.onresult = (event) => {
+  atual.onresult = (event) => {
+    if (!ativo || seq !== escutaSequencia) return;
+    recebeuResultado = true;
     const transcricao = event.results[0][0].transcript.trim();
     document.getElementById("falaUsuario").textContent = `Você disse: "${transcricao}"`;
     processarRespostaVoz(transcricao);
   };
 
-  reconhecimento.onerror = (event) => {
-    if (!ativo) return;
-    if (event.error === "no-speech" || event.error === "aborted") {
-      setTimeout(() => { if (ativo) ouvirComando(); }, 400);
-    } else {
-      setEstadoVisual("", "ERRO NO MICROFONE");
-      document.getElementById("logRodape").textContent = `Erro de áudio: ${event.error}. Toque no microfone para tentar novamente.`;
-    }
+  atual.onerror = (event) => {
+    if (!ativo || seq !== escutaSequencia) return;
+    if (event.error === "no-speech" || event.error === "aborted") return;
+    erroFatal = true;
+    setEstadoVisual("", "ERRO NO MICROFONE");
+    const mensagens = {
+      "not-allowed": "Microfone bloqueado. Permita o acesso nas configurações do navegador.",
+      "service-not-allowed": "Serviço de reconhecimento não autorizado no navegador.",
+      "audio-capture": "Microfone indisponível. Confira a entrada de áudio no Windows.",
+      "network": "Falha no serviço de reconhecimento. Verifique a conexão com a internet."
+    };
+    document.getElementById("logRodape").textContent = mensagens[event.error] || `Erro de áudio: ${event.error}.`;
   };
 
-  reconhecimento.onend = () => {
-    if (ativo && document.getElementById("statusBadge").textContent === "OUVINDO VOCÊ...") {
-      setTimeout(() => { if (ativo) ouvirComando(); }, 350);
+  atual.onend = () => {
+    if (!ativo || seq !== escutaSequencia) return;
+    if (reconhecimento === atual) reconhecimento = null;
+    if (erroFatal) {
+      // Evita reiniciar indefinidamente sem permissão ou serviço disponível.
+      ativo = false;
+      document.getElementById("btnIniciar").style.display = "block";
+      document.getElementById("btnParar").style.display = "none";
+      return;
     }
+    if (!recebeuResultado) {
+      setEstadoVisual("", houveInicio ? "AGUARDANDO NOVA ESCUTA" : "INICIANDO MICROFONE...");
+      setTimeout(() => {
+        if (ativo && seq === escutaSequencia) ouvirComando();
+      }, 650);
+    }
+    // Se houve resultado, processarRespostaVoz já controla o próximo passo.
   };
 
-  try {
-    reconhecimento.start();
-  } catch (e) {}
+  try { atual.start(); }
+  catch (e) {
+    if (seq === escutaSequencia) {
+      setEstadoVisual("", "NÃO FOI POSSÍVEL INICIAR O MICROFONE");
+      document.getElementById("logRodape").textContent = `Falha ao iniciar microfone: ${e.message || e}`;
+    }
+  }
 }
 
 function extrairNumeroFalado(texto) {
